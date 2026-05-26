@@ -1,4 +1,4 @@
-// Supabase'i ES Module olarak içe aktarıyoruz
+// Supabase'i ES Module olarak iÃ§e aktarÄ±yoruz
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { districtsMap } from './turkey-cities.js';
 
@@ -14,7 +14,7 @@ const userName = document.getElementById('userName');
 const userAvatar = document.getElementById('userAvatar');
 const logoutBtn = document.getElementById('logoutBtn');
 
-// Profil Modalı Elemanları
+// Profil ModalÄ± ElemanlarÄ±
 const profileTrigger = document.getElementById('profileTrigger');
 const profileModal = document.getElementById('profileModal');
 const closeProfileBtn = document.getElementById('closeProfileBtn');
@@ -34,7 +34,7 @@ const prefSnack = document.getElementById('prefSnack');
 const twitterProfileLink = document.getElementById('twitterProfileLink');
 const profileActionWrapper = document.getElementById('profileActionWrapper');
 
-// 1. Giriş Butonu İşlevi
+// 1. GiriÅŸ Butonu Ä°ÅŸlevi
 loginBtn.addEventListener('click', async () => {
 	const { error } = await supabase.auth.signInWithOAuth({
 		provider: 'twitter',
@@ -43,10 +43,10 @@ loginBtn.addEventListener('click', async () => {
 		}
 	});
 
-	if (error) console.error("Giriş başlatılamadı:", error.message);
+	if (error) console.error("GiriÅŸ baÅŸlatÄ±lamadÄ±:", error.message);
 });
 
-// 2. Çıkış Butonu İşlevi
+// 2. Ã‡Ä±kÄ±ÅŸ Butonu Ä°ÅŸlevi
 logoutBtn.addEventListener('click', async () => {
 	const user = (await supabase.auth.getUser()).data.user;
 	if (user) {
@@ -54,18 +54,16 @@ logoutBtn.addEventListener('click', async () => {
 	}
 	const { error } = await supabase.auth.signOut();
 	if (error) {
-		console.error("Çıkış yapılamadı:", error.message);
+		console.error("Ã‡Ä±kÄ±ÅŸ yapÄ±lamadÄ±:", error.message);
 	} else {
 		userContainer.style.display = 'none';
 		loginBtn.style.display = 'flex';
-		const mapView = document.getElementById('mapView');
-		if (mapView) mapView.style.display = 'none';
 	}
 });
 
 // 3. Oturum Durumunu Dinleme
 supabase.auth.onAuthStateChange(async (event, session) => {
-	// Arayüz yükleme kilidini (preload sınıflarını) kaldırıyoruz
+	// ArayÃ¼z yÃ¼kleme kilidini (preload sÄ±nÄ±flarÄ±nÄ±) kaldÄ±rÄ±yoruz
 	document.documentElement.classList.remove('preload-session-active', 'preload-profile-ready', 'preload-needs-onboarding', 'preload-logged-out');
 
 	if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
@@ -77,7 +75,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		}
 
 		const user = session.user;
-		// Profil açma tetikleyicisi
+		// Profil aÃ§ma tetikleyicisi
 		if (profileTrigger) {
 			profileTrigger.onclick = () => {
 				openProfileModal(user);
@@ -90,15 +88,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			try {
 				const profileData = JSON.parse(cachedProfile);
 				if (profileData.is_onboarded) {
-					console.log("Kullanıcı bilgileri lokal depolamadan yüklendi (Onboarded), DB sorgusu atlanıyor:", profileData);
+					console.log("KullanÄ±cÄ± bilgileri lokal depolamadan yÃ¼klendi (Onboarded), DB sorgusu atlanÄ±yor:", profileData);
 					userName.innerText = profileData.display_name;
 					userAvatar.src = profileData.avatar_url;
 					loginBtn.style.display = 'none';
 					userContainer.style.display = 'flex';
 					document.getElementById('setupScreen').style.display = 'none';
-					const mapView = document.getElementById('mapView');
-					if (mapView) mapView.style.display = 'flex';
-					loadBiraMap();
 					return;
 				}
 			} catch (e) {
@@ -106,7 +101,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			}
 		}
 
-		// Supabase'den güncel profil durumunu çekelim
+		// Supabase'den gÃ¼ncel profil durumunu Ã§ekelim
 		const { data: dbProfile, error: dbError } = await supabase
 			.from('profiles')
 			.select('is_onboarded, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
@@ -114,7 +109,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			.maybeSingle();
 
 		if (dbProfile && dbProfile.is_onboarded) {
-			console.log("Kullanıcı onboard edilmiş, bilgiler yerel depolamaya yazılıyor.");
+			console.log("KullanÄ±cÄ± onboard edilmiÅŸ, bilgiler yerel depolamaya yazÄ±lÄ±yor.");
 			localStorage.setItem(localKey, JSON.stringify(dbProfile));
 
 			userName.innerText = dbProfile.display_name;
@@ -122,14 +117,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
-			const mapView = document.getElementById('mapView');
-			if (mapView) mapView.style.display = 'flex';
-			loadBiraMap();
 		} else {
-			// Onboard edilmemiş veya kaydı yok!
-			console.log("Kullanıcı kurulum ekranını tamamlamamış. Setup ekranı açılıyor.");
+			// Onboard edilmemiÅŸ veya kaydÄ± yok!
+			console.log("KullanÄ±cÄ± kurulum ekranÄ±nÄ± tamamlamamÄ±ÅŸ. Setup ekranÄ± aÃ§Ä±lÄ±yor.");
 			loginBtn.style.display = 'none';
-			userContainer.style.display = 'flex'; // Profil bilgilerinin görünmesi için
+			userContainer.style.display = 'flex'; // Profil bilgilerinin gÃ¶rÃ¼nmesi iÃ§in
 			document.getElementById('setupScreen').style.display = 'flex';
 
 			const metadata = user.user_metadata;
@@ -144,31 +136,29 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 				updated_at: new Date().toISOString()
 			};
 
-			// Profil bilgilerini hemen arayüze bas
+			// Profil bilgilerini hemen arayÃ¼ze bas
 			userName.innerText = twitterData.display_name;
 			userAvatar.src = twitterData.avatar_url;
 
 			if (!dbProfile) {
-				// İlk defa geliyorsa profili default değerlerle oluşturalım
+				// Ä°lk defa geliyorsa profili default deÄŸerlerle oluÅŸturalÄ±m
 				await supabase.from('profiles').upsert(twitterData, { onConflict: 'id' });
 			}
 
-			// Setup sihirbazını başlatıyoruz
+			// Setup sihirbazÄ±nÄ± baÅŸlatÄ±yoruz
 			initSetupLogic(user, twitterData);
 		}
 	} else if (event === 'SIGNED_OUT') {
 		loginBtn.style.display = 'flex';
 		userContainer.style.display = 'none';
 		document.getElementById('setupScreen').style.display = 'none';
-		const mapView = document.getElementById('mapView');
-		if (mapView) mapView.style.display = 'none';
 		userName.innerText = '';
 		userAvatar.src = '';
 	}
 });
 let isSetupInitialized = false;
 
-// Setup mantığını yöneten sihirbaz fonksiyonu
+// Setup mantÄ±ÄŸÄ±nÄ± yÃ¶neten sihirbaz fonksiyonu
 function initSetupLogic(user, twitterData) {
 	if (isSetupInitialized) return;
 	isSetupInitialized = true;
@@ -182,17 +172,17 @@ function initSetupLogic(user, twitterData) {
 	const nextBtnStep1 = document.getElementById('nextBtnStep1');
 	const saveProfileBtn = document.getElementById('saveProfileBtn');
 
-	// Konum Seçim DOM Elemanları
+	// Konum SeÃ§im DOM ElemanlarÄ±
 	const citySelect = document.getElementById('citySelect');
 	const districtSelect = document.getElementById('districtSelect');
 	const addLocationBtn = document.getElementById('addLocationBtn');
 	const selectedLocationsGroup = document.getElementById('selectedLocationsGroup');
 
-	// Şehirleri dropdown listesine dinamik olarak doldur (81 il)
+	// Åehirleri dropdown listesine dinamik olarak doldur (81 il)
 	if (citySelect) {
-		citySelect.innerHTML = '<option value="" disabled selected>Şehir Seçin</option>';
-		// İstanbul, Ankara, İzmir'i başa alıp diğer şehirleri alfabetik sıralayalım
-		const priorityCities = ["İstanbul", "Ankara", "İzmir"];
+		citySelect.innerHTML = '<option value="" disabled selected>Åehir SeÃ§in</option>';
+		// Ä°stanbul, Ankara, Ä°zmir'i baÅŸa alÄ±p diÄŸer ÅŸehirleri alfabetik sÄ±ralayalÄ±m
+		const priorityCities = ["Ä°stanbul", "Ankara", "Ä°zmir"];
 		const otherCities = Object.keys(districtsMap)
 			.filter(c => !priorityCities.includes(c))
 			.sort((a, b) => a.localeCompare(b, 'tr'));
@@ -206,17 +196,17 @@ function initSetupLogic(user, twitterData) {
 		});
 	}
 
-	// Şehir seçildiğinde ilçeleri doldur
+	// Åehir seÃ§ildiÄŸinde ilÃ§eleri doldur
 	if (citySelect && districtSelect) {
 		citySelect.addEventListener('change', () => {
 			const city = citySelect.value;
-			districtSelect.innerHTML = '<option value="" disabled selected>İlçe Seçin</option>';
+			districtSelect.innerHTML = '<option value="" disabled selected>Ä°lÃ§e SeÃ§in</option>';
 			
 			if (districtsMap[city]) {
-				// Bütün Şehir seçeneğini ilçe listesinin başına ekle
+				// BÃ¼tÃ¼n Åehir seÃ§eneÄŸini ilÃ§e listesinin baÅŸÄ±na ekle
 				const allOpt = document.createElement('option');
-				allOpt.value = "Bütün Şehir";
-				allOpt.innerText = "Bütün Şehir";
+				allOpt.value = "BÃ¼tÃ¼n Åehir";
+				allOpt.innerText = "BÃ¼tÃ¼n Åehir";
 				districtSelect.appendChild(allOpt);
 
 				districtsMap[city].forEach(district => {
@@ -239,13 +229,13 @@ function initSetupLogic(user, twitterData) {
 			const district = districtSelect ? districtSelect.value : '';
 			
 			if (!city || !district) {
-				alert("Lütfen önce şehir ve ilçe seçiniz.");
+				alert("LÃ¼tfen Ã¶nce ÅŸehir ve ilÃ§e seÃ§iniz.");
 				return;
 			}
 			
 			const locStr = `${city}, ${district}`;
 			if (selectedLocations.includes(locStr)) {
-				alert("Bu konum zaten eklenmiş.");
+				alert("Bu konum zaten eklenmiÅŸ.");
 				return;
 			}
 			
@@ -257,14 +247,14 @@ function initSetupLogic(user, twitterData) {
 			selectedLocations.push(locStr);
 			renderLocations();
 			
-			// İlçe seçimini sıfırla
+			// Ä°lÃ§e seÃ§imini sÄ±fÄ±rla
 			if (districtSelect) {
 				districtSelect.value = '';
 			}
 		});
 	}
 
-	// Seçilen konumları ekrana çizdir
+	// SeÃ§ilen konumlarÄ± ekrana Ã§izdir
 	function renderLocations() {
 		if (!selectedLocationsGroup) return;
 		selectedLocationsGroup.innerHTML = '';
@@ -287,20 +277,20 @@ function initSetupLogic(user, twitterData) {
 		});
 	}
 
-	// Tekli seçim değerini al
+	// Tekli seÃ§im deÄŸerini al
 	function getPillValue(groupId) {
 		const selected = document.querySelector(`#${groupId} .pill-btn.selected`);
 		return selected ? selected.getAttribute('data-value') : null;
 	}
 
-	// Pill grubu tıklamalarını yönet
+	// Pill grubu tÄ±klamalarÄ±nÄ± yÃ¶net
 	function initPillGroup(groupId, isMultiSelect = false) {
 		const group = document.getElementById(groupId);
 		if (!group) return;
 
 		const pills = group.querySelectorAll('.pill-btn');
 		pills.forEach(pill => {
-			// Mevcut olay dinleyicilerini sıfırlamak için butonu kopyalıyoruz
+			// Mevcut olay dinleyicilerini sÄ±fÄ±rlamak iÃ§in butonu kopyalÄ±yoruz
 			const newPill = pill.cloneNode(true);
 			pill.parentNode.replaceChild(newPill, pill);
 
@@ -331,7 +321,7 @@ function initSetupLogic(user, twitterData) {
 		});
 	}
 
-	// Tüm seçim gruplarını başlat
+	// TÃ¼m seÃ§im gruplarÄ±nÄ± baÅŸlat
 	initPillGroup('beerStylesGroup', true);
 	initPillGroup('otherAlcoholsGroup', true);
 	initPillGroup('frequencyGroup', false);
@@ -339,7 +329,7 @@ function initSetupLogic(user, twitterData) {
 	initPillGroup('abvGroup', false);
 	initPillGroup('snackGroup', false);
 
-	// İlerleme çubuğunu güncelle
+	// Ä°lerleme Ã§ubuÄŸunu gÃ¼ncelle
 	function updateProgress(step) {
 		const bar = document.getElementById('setupProgressBar');
 		if (bar) bar.style.width = (step === 1 ? '50%' : '100%');
@@ -347,52 +337,52 @@ function initSetupLogic(user, twitterData) {
 
 	updateProgress(1);
 
-	// Adım 1 Doğrulama ve Geçiş
+	// AdÄ±m 1 DoÄŸrulama ve GeÃ§iÅŸ
 	nextBtnStep1.onclick = () => {
 		if (selectedLocations.length === 0) {
-			alert("Lütfen en az 1 tercih edilen konum ekleyiniz.");
+			alert("LÃ¼tfen en az 1 tercih edilen konum ekleyiniz.");
 			return;
 		}
 		if (selectedBeerStyles.length === 0) {
-			alert("Lütfen en az 1 favori bira tarzı seçiniz.");
+			alert("LÃ¼tfen en az 1 favori bira tarzÄ± seÃ§iniz.");
 			return;
 		}
 		if (selectedOtherAlcohols.length === 0) {
-			alert("Lütfen diğer alkol tercihlerinizi seçiniz.");
+			alert("LÃ¼tfen diÄŸer alkol tercihlerinizi seÃ§iniz.");
 			return;
 		}
 		const frequency = getPillValue('frequencyGroup');
 		if (!frequency) {
-			alert("Lütfen bira içme sıklığınızı seçiniz.");
+			alert("LÃ¼tfen bira iÃ§me sÄ±klÄ±ÄŸÄ±nÄ±zÄ± seÃ§iniz.");
 			return;
 		}
 
-		// Adım 2'ye geçiş yap
+		// AdÄ±m 2'ye geÃ§iÅŸ yap
 		step1.classList.remove('active');
 		step2.classList.add('active');
 		updateProgress(2);
 		window.scrollTo(0, 0);
 	};
 
-	// Adım 2 Doğrulama ve Kaydetme
+	// AdÄ±m 2 DoÄŸrulama ve Kaydetme
 	saveProfileBtn.onclick = async () => {
 		const environment = getPillValue('environmentGroup');
 		if (!environment) {
-			alert("Lütfen tercih ettiğiniz içim ortamını seçiniz.");
+			alert("LÃ¼tfen tercih ettiÄŸiniz iÃ§im ortamÄ±nÄ± seÃ§iniz.");
 			return;
 		}
 		const abv = getPillValue('abvGroup');
 		if (!abv) {
-			alert("Lütfen tercih ettiğiniz alkol oranını (ABV) seçiniz.");
+			alert("LÃ¼tfen tercih ettiÄŸiniz alkol oranÄ±nÄ± (ABV) seÃ§iniz.");
 			return;
 		}
 		const snack = getPillValue('snackGroup');
 		if (!snack) {
-			alert("Lütfen biranın yanındaki atıştırmalık tercihinizi seçiniz.");
+			alert("LÃ¼tfen biranÄ±n yanÄ±ndaki atÄ±ÅŸtÄ±rmalÄ±k tercihinizi seÃ§iniz.");
 			return;
 		}
 
-		// Supabase profiles tablosunu güncelle
+		// Supabase profiles tablosunu gÃ¼ncelle
 		const updateData = {
 			is_onboarded: true,
 			favorite_styles: selectedBeerStyles,
@@ -411,11 +401,11 @@ function initSetupLogic(user, twitterData) {
 			.eq('id', user.id);
 
 		if (error) {
-			alert("Profil kurulumu tamamlanırken bir hata oluştu: " + error.message);
+			alert("Profil kurulumu tamamlanÄ±rken bir hata oluÅŸtu: " + error.message);
 		} else {
-			console.log("Kurulum başarıyla tamamlandı.");
+			console.log("Kurulum baÅŸarÄ±yla tamamlandÄ±.");
 
-			// Yerel önbelleğe kaydet
+			// Yerel Ã¶nbelleÄŸe kaydet
 			const localKey = `user_profile_${user.id}`;
 			const localData = {
 				display_name: twitterData.display_name,
@@ -432,20 +422,17 @@ function initSetupLogic(user, twitterData) {
 			};
 			localStorage.setItem(localKey, JSON.stringify(localData));
 
-			// Arayüzü güncelle
+			// ArayÃ¼zÃ¼ gÃ¼ncelle
 			userName.innerText = twitterData.display_name;
 			userAvatar.src = twitterData.avatar_url;
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
-			const mapView = document.getElementById('mapView');
-			if (mapView) mapView.style.display = 'flex';
-			loadBiraMap();
 		}
 	};
 }
 
-// Profil modalını açma
+// Profil modalÄ±nÄ± aÃ§ma
 async function openProfileModal(user) {
 	if (!user) return;
 	const localKey = `user_profile_${user.id}`;
@@ -458,7 +445,7 @@ async function openProfileModal(user) {
 		} catch (e) {}
 	}
 	
-	// Eğer önbellek eksikse veritabanından çekelim
+	// EÄŸer Ã¶nbellek eksikse veritabanÄ±ndan Ã§ekelim
 	if (!profileData || !profileData.favorite_styles) {
 		const { data, error } = await supabase
 			.from('profiles')
@@ -474,12 +461,12 @@ async function openProfileModal(user) {
 	
 	if (!profileData) return;
 	
-	// Bilgileri yerleştir
+	// Bilgileri yerleÅŸtir
 	profileAvatarLarge.src = profileData.avatar_url || '';
 	profileDisplayName.innerText = profileData.display_name || '';
 	profileNickname.innerText = profileData.nickname ? `@${profileData.nickname}` : '';
 	
-	// Twitter profil butonu ayarı
+	// Twitter profil butonu ayarÄ±
 	if (twitterProfileLink && profileActionWrapper) {
 		if (profileData.nickname) {
 			profileActionWrapper.style.display = 'block';
@@ -518,10 +505,10 @@ async function openProfileModal(user) {
 			prefLocations.appendChild(span);
 		});
 	} else {
-		prefLocations.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
+		prefLocations.innerHTML = '<span class="pref-tag">BelirtilmemiÅŸ</span>';
 	}
 	
-	// Bira Tarzları
+	// Bira TarzlarÄ±
 	prefBeerStyles.innerHTML = '';
 	if (profileData.favorite_styles && profileData.favorite_styles.length > 0) {
 		profileData.favorite_styles.forEach(style => {
@@ -531,21 +518,21 @@ async function openProfileModal(user) {
 			prefBeerStyles.appendChild(span);
 		});
 	} else {
-		prefBeerStyles.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
+		prefBeerStyles.innerHTML = '<span class="pref-tag">BelirtilmemiÅŸ</span>';
 	}
 	
-	// Diğer Alkoller
+	// DiÄŸer Alkoller
 	prefOtherAlcohols.innerHTML = '';
 	
 	const alcoholColors = {
-		"Rakı": { bg: "#e0f2fe", border: "#0ea5e9", color: "#0369a1" },
-		"Şarap": { bg: "#ffe4e6", border: "#f43f5e", color: "#be185d" },
+		"RakÄ±": { bg: "#e0f2fe", border: "#0ea5e9", color: "#0369a1" },
+		"Åarap": { bg: "#ffe4e6", border: "#f43f5e", color: "#be185d" },
 		"Viski": { bg: "#fef3c7", border: "#f59e0b", color: "#b45309" },
 		"Cin": { bg: "#d1fae5", border: "#10b981", color: "#047857" },
 		"Votka": { bg: "#f1f5f9", border: "#64748b", color: "#475569" },
 		"Tekila": { bg: "#fef9c3", border: "#eab308", color: "#a16207" },
 		"Kokteyl": { bg: "#f3e8ff", border: "#a855f7", color: "#6d28d9" },
-		"İçmiyorum": { bg: "#f5f5f4", border: "#78716c", color: "#57504b" }
+		"Ä°Ã§miyorum": { bg: "#f5f5f4", border: "#78716c", color: "#57504b" }
 	};
 	
 	if (profileData.other_alcohols && profileData.other_alcohols.length > 0) {
@@ -554,7 +541,7 @@ async function openProfileModal(user) {
 			span.className = 'pref-tag';
 			span.innerText = alc;
 			
-			// Her alkol seçeneği için pastel renk setini uygula
+			// Her alkol seÃ§eneÄŸi iÃ§in pastel renk setini uygula
 			if (alcoholColors[alc]) {
 				span.style.backgroundColor = alcoholColors[alc].bg;
 				span.style.borderColor = alcoholColors[alc].border;
@@ -565,16 +552,16 @@ async function openProfileModal(user) {
 			prefOtherAlcohols.appendChild(span);
 		});
 	} else {
-		prefOtherAlcohols.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
+		prefOtherAlcohols.innerHTML = '<span class="pref-tag">BelirtilmemiÅŸ</span>';
 	}
 	
-	// Tekli seçim değerleri
+	// Tekli seÃ§im deÄŸerleri
 	prefFrequency.innerText = profileData.drinking_frequency || '-';
 	prefEnvironment.innerText = profileData.drinking_environment || '-';
 	prefAbv.innerText = profileData.abv_preference || '-';
 	prefSnack.innerText = profileData.drinking_snack || '-';
 	
-	// Modalı göster
+	// ModalÄ± gÃ¶ster
 	document.body.style.overflow = 'hidden';
 	profileModal.style.display = 'flex';
 	setTimeout(() => {
@@ -582,7 +569,7 @@ async function openProfileModal(user) {
 	}, 10);
 }
 
-// Profil modalını kapatma
+// Profil modalÄ±nÄ± kapatma
 function closeProfileModal() {
 	profileModal.classList.remove('active');
 	setTimeout(() => {
@@ -591,7 +578,7 @@ function closeProfileModal() {
 	}, 350);
 }
 
-// Olay dinleyicilerini bağlayalım
+// Olay dinleyicilerini baÄŸlayalÄ±m
 if (closeProfileBtn) {
 	closeProfileBtn.addEventListener('click', closeProfileModal);
 }
@@ -604,537 +591,6 @@ if (logoutBtnModal) {
 		logoutBtn.click();
 	});
 }
-
-// Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
-// ─── Harita Durum Değişkenleri ─────────────────────────────────────────────
-let currentScale = 1.0;
-let currentX = 0;
-let currentY = 0;
-let minScale = 0.3;
-let maxScale = 4.0;
-let isMapCenteredOnce = false;
-
-// ─── Viewport Sınır Kontrolü ────────────────────────────────────────────────
-function clampTransform() {
-	const mapViewport = document.getElementById('mapViewport');
-	if (!mapViewport) return;
-	const vw = mapViewport.clientWidth;
-	const vh = mapViewport.clientHeight;
-	const mapW = 1005 * currentScale;
-	const mapH = 490 * currentScale;
-	const margin = 80;
-	currentX = Math.min(currentX, vw - margin);
-	currentX = Math.max(currentX, margin - mapW);
-	currentY = Math.min(currentY, vh - margin);
-	currentY = Math.max(currentY, margin - mapH);
-}
-
-// ─── Transform Uygulama (doğrudan, animasyonsuz) ────────────────────────────
-function applyTransformDirect() {
-	const mapSurface = document.getElementById('mapSurface');
-	if (!mapSurface) return;
-	clampTransform();
-	mapSurface.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale})`;
-	mapSurface.style.setProperty('--map-scale', currentScale);
-}
-
-// Dışarıdan çağrılabilen alias
-function applyTransform() { applyTransformDirect(); }
-
-// ─── Harita Merkezleme ───────────────────────────────────────────────────────
-function centerMap(isFirstTime = false) {
-	const mapViewport = document.getElementById('mapViewport');
-	if (!mapViewport) return;
-
-	const viewportRect = mapViewport.getBoundingClientRect();
-	const w = viewportRect.width;
-	const h = viewportRect.height;
-	if (w === 0 || h === 0) return;
-
-	const fitScale = Math.min(w / 1005, h / 490) * 0.92;
-	currentScale = fitScale;
-	minScale = Math.max(0.2, Math.min(w / 1005, h / 490) * 0.45);
-	maxScale = 4.0;
-	currentX = (w - 1005 * currentScale) / 2;
-	currentY = (h - 490 * currentScale) / 2;
-
-	const mapSurface = document.getElementById('mapSurface');
-	if (!mapSurface) return;
-
-	if (isFirstTime) {
-		// Flash olmadan: önce transform'ı uygula (görünmez halde), sonra fade-in
-		mapSurface.style.transition = 'none';
-		mapSurface.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale})`;
-		mapSurface.style.setProperty('--map-scale', currentScale);
-		requestAnimationFrame(() => {
-			mapSurface.style.transition = 'opacity 0.3s ease';
-			mapSurface.style.opacity = '1';
-			setTimeout(() => { mapSurface.style.transition = ''; }, 350);
-		});
-	} else {
-		applyTransformDirect();
-	}
-}
-
-// Resize'da sessizce yeniden merkezle
-window.addEventListener('resize', () => {
-	const mapView = document.getElementById('mapView');
-	if (mapView && mapView.style.display !== 'none') centerMap(false);
-});
-
-// ─── Jest Motoru: Google Maps Kalitesinde Pan + Zoom ────────────────────────
-function initMapGestures(mapViewport, mapSurface) {
-	if (mapViewport.dataset.gesturesInitialized) return;
-	mapViewport.dataset.gesturesInitialized = 'true';
-
-	// --- Momentum değişkenleri ---
-	let velX = 0;
-	let velY = 0;
-	let momentumAnimId = null;
-	const FRICTION = 0.93; // ne kadar süre kayacak (0.9=az, 0.97=çok)
-	const MIN_VEL = 0.3;   // durma eşiği (px/frame)
-
-	// --- Drag değişkenleri ---
-	let isDragging = false;
-	let dragStartX = 0;
-	let dragStartY = 0;
-	let dragBaseX = 0;
-	let dragBaseY = 0;
-	let lastMoveX = 0;
-	let lastMoveY = 0;
-	let lastMoveTime = 0;
-
-	// --- Zoom animasyonu değişkenleri ---
-	let zoomTargetScale = currentScale;
-	let zoomTargetX = currentX;
-	let zoomTargetY = currentY;
-	let zoomAnimId = null;
-
-	// --- Pinch değişkenleri ---
-	let isPinching = false;
-	let pinchInitialDist = 0;
-	let pinchInitialScale = 1.0;
-	let pinchUntransX = 0;
-	let pinchUntransY = 0;
-
-	// ── Yardımcı ──────────────────────────────────────────────────────────
-	function setGestureMode(active) {
-		if (active) {
-			mapSurface.style.willChange = 'transform';
-			mapViewport.classList.add('map-gesturing');
-		} else {
-			setTimeout(() => { mapSurface.style.willChange = 'auto'; }, 120);
-			mapViewport.classList.remove('map-gesturing');
-		}
-	}
-
-	function stopMomentum() {
-		if (momentumAnimId) { cancelAnimationFrame(momentumAnimId); momentumAnimId = null; }
-		velX = velY = 0;
-	}
-
-	function stopZoomAnim() {
-		if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-	}
-
-	// ── Momentum Animasyonu ────────────────────────────────────────────────
-	function runMomentum() {
-		velX *= FRICTION;
-		velY *= FRICTION;
-		currentX += velX;
-		currentY += velY;
-		applyTransformDirect();
-
-		if (Math.abs(velX) > MIN_VEL || Math.abs(velY) > MIN_VEL) {
-			momentumAnimId = requestAnimationFrame(runMomentum);
-		} else {
-			momentumAnimId = null;
-			setGestureMode(false);
-		}
-	}
-
-	// ── Smooth Zoom Animasyonu (hedef scale'e ease-out ile git) ────────────
-	function runZoomAnim() {
-		const ease = 0.16;
-		const ds = zoomTargetScale - currentScale;
-		const dx = zoomTargetX - currentX;
-		const dy = zoomTargetY - currentY;
-
-		if (Math.abs(ds) < 0.0008 && Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
-			currentScale = zoomTargetScale;
-			currentX = zoomTargetX;
-			currentY = zoomTargetY;
-			applyTransformDirect();
-			zoomAnimId = null;
-			setGestureMode(false);
-			return;
-		}
-
-		currentScale += ds * ease;
-		currentX += dx * ease;
-		currentY += dy * ease;
-		applyTransformDirect();
-		zoomAnimId = requestAnimationFrame(runZoomAnim);
-	}
-
-	// ── Mouse Drag ─────────────────────────────────────────────────────────
-	mapViewport.addEventListener('mousedown', (e) => {
-		if (e.button !== 0) return;
-		if (e.target.closest('.map-avatar-bubble')) return;
-
-		stopMomentum();
-		stopZoomAnim();
-
-		isDragging = true;
-		setGestureMode(true);
-		dragStartX = lastMoveX = e.clientX;
-		dragStartY = lastMoveY = e.clientY;
-		dragBaseX = currentX;
-		dragBaseY = currentY;
-		velX = velY = 0;
-		lastMoveTime = performance.now();
-		e.preventDefault();
-	});
-
-	window.addEventListener('mousemove', (e) => {
-		if (!isDragging) return;
-		const now = performance.now();
-		const dt = Math.max(1, now - lastMoveTime);
-
-		// Hız takibi (normalize: 16ms = 1 frame ~60fps)
-		velX = (e.clientX - lastMoveX) / dt * 16;
-		velY = (e.clientY - lastMoveY) / dt * 16;
-		lastMoveX = e.clientX;
-		lastMoveY = e.clientY;
-		lastMoveTime = now;
-
-		currentX = dragBaseX + (e.clientX - dragStartX);
-		currentY = dragBaseY + (e.clientY - dragStartY);
-		applyTransformDirect();
-	});
-
-	const endMouseDrag = () => {
-		if (!isDragging) return;
-		isDragging = false;
-		// Yeterli hız varsa momentum başlat
-		if (Math.abs(velX) > MIN_VEL || Math.abs(velY) > MIN_VEL) {
-			momentumAnimId = requestAnimationFrame(runMomentum);
-		} else {
-			setGestureMode(false);
-		}
-	};
-	window.addEventListener('mouseup', endMouseDrag);
-	window.addEventListener('blur', () => { isDragging = false; stopMomentum(); setGestureMode(false); });
-
-	// ── Mouse Wheel Zoom (smooth, cursor-centered) ─────────────────────────
-	mapViewport.addEventListener('wheel', (e) => {
-		e.preventDefault();
-		stopMomentum();
-
-		const rect = mapViewport.getBoundingClientRect();
-		const px = e.clientX - rect.left;
-		const py = e.clientY - rect.top;
-
-		// Normalleştirilmiş delta (trackpad vs fare tekerleği)
-		let delta = e.deltaY;
-		if (e.deltaMode === 1) delta *= 30; // satır bazlı
-		if (e.deltaMode === 2) delta *= 300; // sayfa bazlı
-		const factor = Math.pow(1.0012, -delta); // çok yumuşak, birikimli
-
-		// Zoom hedefini güncelle (mevcut animasyon üzerine katla)
-		let newTargetScale = zoomTargetScale * factor;
-		newTargetScale = Math.max(minScale, Math.min(maxScale, newTargetScale));
-		const scaleRatio = newTargetScale / zoomTargetScale;
-
-		// Hedef pozisyonu imlece göre hesapla
-		zoomTargetX = px - (px - zoomTargetX) * scaleRatio;
-		zoomTargetY = py - (py - zoomTargetY) * scaleRatio;
-		zoomTargetScale = newTargetScale;
-
-		setGestureMode(true);
-		if (!zoomAnimId) zoomAnimId = requestAnimationFrame(runZoomAnim);
-	}, { passive: false });
-
-	// ── Touch Pan (tek parmak, momentum'lu) ───────────────────────────────
-	let touchPrevX = 0;
-	let touchPrevY = 0;
-	let touchPrevTime = 0;
-
-	mapViewport.addEventListener('touchstart', (e) => {
-		if (e.target.closest('.map-avatar-bubble')) return;
-
-		stopMomentum();
-		stopZoomAnim();
-		setGestureMode(true);
-
-		if (e.touches.length === 1) {
-			isPinching = false;
-			isDragging = true;
-			const t = e.touches[0];
-			dragStartX = touchPrevX = lastMoveX = t.clientX;
-			dragStartY = touchPrevY = lastMoveY = t.clientY;
-			dragBaseX = currentX;
-			dragBaseY = currentY;
-			velX = velY = 0;
-			touchPrevTime = lastMoveTime = performance.now();
-		} else if (e.touches.length === 2) {
-			isDragging = false;
-			isPinching = true;
-			velX = velY = 0;
-			const t1 = e.touches[0];
-			const t2 = e.touches[1];
-			pinchInitialDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-			pinchInitialScale = currentScale;
-			const rect = mapViewport.getBoundingClientRect();
-			const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
-			const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
-			pinchUntransX = (midX - currentX) / currentScale;
-			pinchUntransY = (midY - currentY) / currentScale;
-		}
-	}, { passive: false });
-
-	mapViewport.addEventListener('touchmove', (e) => {
-		e.preventDefault();
-		const now = performance.now();
-
-		if (isDragging && e.touches.length === 1) {
-			const t = e.touches[0];
-			const dt = Math.max(1, now - touchPrevTime);
-			velX = (t.clientX - touchPrevX) / dt * 16;
-			velY = (t.clientY - touchPrevY) / dt * 16;
-			touchPrevX = t.clientX;
-			touchPrevY = t.clientY;
-			touchPrevTime = now;
-
-			currentX = dragBaseX + (t.clientX - dragStartX);
-			currentY = dragBaseY + (t.clientY - dragStartY);
-			applyTransformDirect();
-		} else if (isPinching && e.touches.length === 2) {
-			const t1 = e.touches[0];
-			const t2 = e.touches[1];
-			const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-			if (dist === 0 || pinchInitialDist === 0) return;
-
-			let newScale = pinchInitialScale * (dist / pinchInitialDist);
-			newScale = Math.max(minScale, Math.min(maxScale, newScale));
-
-			const rect = mapViewport.getBoundingClientRect();
-			const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
-			const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
-			currentX = midX - pinchUntransX * newScale;
-			currentY = midY - pinchUntransY * newScale;
-			currentScale = newScale;
-			applyTransformDirect();
-		}
-	}, { passive: false });
-
-	mapViewport.addEventListener('touchend', (e) => {
-		if (e.touches.length === 0) {
-			isPinching = false;
-			if (isDragging) {
-				isDragging = false;
-				if (Math.abs(velX) > MIN_VEL || Math.abs(velY) > MIN_VEL) {
-					momentumAnimId = requestAnimationFrame(runMomentum);
-				} else {
-					setGestureMode(false);
-				}
-			} else {
-				setGestureMode(false);
-			}
-		} else if (e.touches.length === 1 && isPinching) {
-			// Pinch bitti, tek parmak kaldı → pan'e geç
-			isPinching = false;
-			isDragging = true;
-			const t = e.touches[0];
-			dragStartX = touchPrevX = t.clientX;
-			dragStartY = touchPrevY = t.clientY;
-			dragBaseX = currentX;
-			dragBaseY = currentY;
-			velX = velY = 0;
-			touchPrevTime = performance.now();
-		}
-	});
-	mapViewport.addEventListener('touchcancel', () => {
-		isDragging = false;
-		isPinching = false;
-		stopMomentum();
-		setGestureMode(false);
-	});
-}
-
-
-// Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
-async function loadBiraMap() {
-	const mapViewport = document.getElementById('mapViewport');
-	const mapSurface = document.getElementById('mapSurface');
-	const mapView = document.getElementById('mapView');
-	if (!mapViewport || !mapSurface || !mapView) return;
-
-	// 1. SVG Haritasını Çek ve Inline Enjekte Et
-	if (!mapSurface.querySelector('svg')) {
-		try {
-			const res = await fetch('/turkey.svg');
-			const svgText = await res.text();
-			mapSurface.innerHTML = svgText;
-		} catch (err) {
-			console.error("Harita yüklenirken hata oluştu:", err);
-			return;
-		}
-	}
-
-	const svgTurkey = document.getElementById('svg-turkey');
-	if (!svgTurkey) return;
-
-	// 2. Supabase'den onboarded olan tüm kullanıcıları çek
-	const { data: profiles, error } = await supabase
-		.from('profiles')
-		.select('id, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
-		.eq('is_onboarded', true);
-
-	if (error) {
-		console.error("Kullanıcı profilleri çekilemedi:", error.message);
-		return;
-	}
-
-	// 3. Kullanıcıları tercih ettikleri şehirlere göre gruplandır
-	const cityGroups = {};
-	profiles.forEach(profile => {
-		if (profile.preferred_locations && profile.preferred_locations.length > 0) {
-			profile.preferred_locations.forEach(loc => {
-				const city = loc.split(',')[0].trim();
-				if (!cityGroups[city]) {
-					cityGroups[city] = [];
-				}
-				if (!cityGroups[city].some(p => p.id === profile.id)) {
-					cityGroups[city].push(profile);
-				}
-			});
-		}
-	});
-
-	// Harita üzerindeki eski avatarları ve aktif şehir sınıflarını temizle
-	document.querySelectorAll('.map-city-group').forEach(el => el.remove());
-	svgTurkey.querySelectorAll('g.active-city').forEach(el => el.classList.remove('active-city'));
-
-	const tooltip = document.getElementById('mapTooltip');
-
-	// Haritadaki şehir gruplarını dinle (Tooltip için)
-	const cityGroupsSvg = svgTurkey.querySelectorAll('g');
-	cityGroupsSvg.forEach(g => {
-		const cityName = g.getAttribute('data-city-name');
-		if (!cityName) return;
-
-		// Eğer şehirde kullanıcı varsa aktif şehir sınıfını ekleyelim
-		if (cityGroups[cityName] && cityGroups[cityName].length > 0) {
-			g.classList.add('active-city');
-		}
-
-		g.addEventListener('mouseenter', (e) => {
-			const count = cityGroups[cityName] ? cityGroups[cityName].length : 0;
-			tooltip.innerHTML = `<strong>${cityName}</strong><br>${count} Sever`;
-			tooltip.classList.add('visible');
-		});
-
-		g.addEventListener('mousemove', (e) => {
-			const wrapperRect = mapViewport.getBoundingClientRect();
-			const x = e.clientX - wrapperRect.left;
-			const y = e.clientY - wrapperRect.top;
-			tooltip.style.left = `${x}px`;
-			tooltip.style.top = `${y}px`;
-		});
-
-		g.addEventListener('mouseleave', () => {
-			tooltip.classList.remove('visible');
-		});
-	});
-
-	// 4. Şehir gruplarına göre avatarları harita üstüne yerleştir
-	Object.keys(cityGroups).forEach(city => {
-		// Haritadaki ilgili şehri bulalım
-		const cityId = city.toLowerCase()
-			.replace(/ı/g, 'i')
-			.replace(/ğ/g, 'g')
-			.replace(/ü/g, 'u')
-			.replace(/ş/g, 's')
-			.replace(/ö/g, 'o')
-			.replace(/ç/g, 'c');
-		
-		const citySvgGroup = svgTurkey.querySelector(`g[id="${cityId}"]`) || svgTurkey.querySelector(`g[data-city-name="${city}"]`);
-		if (!citySvgGroup) return;
-
-		// Bounding Box üzerinden ilin merkezini hesapla
-		const bbox = citySvgGroup.getBBox();
-		const centerX = bbox.x + bbox.width / 2;
-		const centerY = bbox.y + bbox.height / 2;
-
-		// viewBox="0 0 1005 490" parametresine göre yüzde hesabı yapalım
-		const percentX = (centerX / 1005) * 100;
-		const percentY = (centerY / 490) * 100;
-
-		// Şehir grubu div'i oluştur
-		const cityGroupDiv = document.createElement('div');
-		cityGroupDiv.className = 'map-city-group';
-		cityGroupDiv.style.left = `${percentX}%`;
-		cityGroupDiv.style.top = `${percentY}%`;
-
-		const usersInCity = cityGroups[city];
-		const N = usersInCity.length;
-
-		usersInCity.forEach((profile, index) => {
-			const avatarBubble = document.createElement('div');
-			avatarBubble.className = 'map-avatar-bubble';
-			avatarBubble.title = profile.display_name;
-
-			const img = document.createElement('img');
-			img.src = profile.avatar_url || '';
-			img.alt = profile.display_name;
-			avatarBubble.appendChild(img);
-
-			// Tıklama durumunda profil modalını aç
-			avatarBubble.addEventListener('click', (e) => {
-				e.stopPropagation();
-				const mockUser = {
-					id: profile.id,
-					user_metadata: {
-						avatar_url: profile.avatar_url,
-						full_name: profile.display_name,
-						preferred_username: profile.nickname
-					}
-				};
-				openProfileModal(mockUser);
-			});
-
-			// Snapchat dairesel dağıtma (Floating Scatter)
-			if (N > 1) {
-				const angle = (index / N) * 2 * Math.PI;
-				const isMobile = window.innerWidth <= 600;
-				const radius = isMobile ? 18 : 24;
-				const ox = Math.cos(angle) * radius;
-				const oy = Math.sin(angle) * radius;
-				avatarBubble.style.setProperty('--ox', `${ox}px`);
-				avatarBubble.style.setProperty('--oy', `${oy}px`);
-			} else {
-				avatarBubble.style.setProperty('--ox', '0px');
-				avatarBubble.style.setProperty('--oy', '0px');
-			}
-
-			cityGroupDiv.appendChild(avatarBubble);
-		});
-
-		mapSurface.appendChild(cityGroupDiv);
-	});
-
-	// 5. Harita Jestlerini ve Merkezlemeyi Başlat
-	initMapGestures(mapViewport, mapSurface);
-	
-	if (!isMapCenteredOnce) {
-		centerMap(true); // ilk yükleme: fade-in ile
-		isMapCenteredOnce = true;
-	} else {
-		applyTransform();
-	}
-}
-
 // Fire Effect Particles Generation
 document.addEventListener('DOMContentLoaded', () => {
 	const fireContainer = document.getElementById('fire');

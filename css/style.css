@@ -1,4 +1,4 @@
-:root {
+﻿:root {
 	--bg-color: #ffffff;
 	--text-color: #1c1917;
 	--border-color: #e7e5e4;
@@ -9,7 +9,7 @@
 	-webkit-tap-highlight-color: transparent;
 }
 
-/* SF Pro Font Tanımlamaları */
+/* SF Pro Font TanÄ±mlamalarÄ± */
 @font-face {
 	font-family: 'SF Pro Display';
 	src: url('../fonts/SFProDisplay-Medium.woff2') format('woff2');
@@ -247,7 +247,7 @@ header {
 	color: #ef4444;
 }
 
-/* Mobil Uyumlu Medya Sorguları */
+/* Mobil Uyumlu Medya SorgularÄ± */
 @media (max-width: 600px) {
 	header {
 		padding: 12px 16px;
@@ -392,12 +392,12 @@ header {
 }
 
 /* Other alcohols custom pastel styling (when selected) */
-#otherAlcoholsGroup .pill-btn[data-value="Rakı"].selected {
+#otherAlcoholsGroup .pill-btn[data-value="RakÄ±"].selected {
 	background-color: #e0f2fe !important;
 	border-color: #0ea5e9 !important;
 	color: #0369a1 !important;
 }
-#otherAlcoholsGroup .pill-btn[data-value="Şarap"].selected {
+#otherAlcoholsGroup .pill-btn[data-value="Åarap"].selected {
 	background-color: #ffe4e6 !important;
 	border-color: #f43f5e !important;
 	color: #be185d !important;
@@ -427,26 +427,26 @@ header {
 	border-color: #a855f7 !important;
 	color: #6d28d9 !important;
 }
-#otherAlcoholsGroup .pill-btn[data-value="İçmiyorum"].selected {
+#otherAlcoholsGroup .pill-btn[data-value="Ä°Ã§miyorum"].selected {
 	background-color: #f5f5f4 !important;
 	border-color: #78716c !important;
 	color: #57504b !important;
 }
 
 /* Other alcohols translucent style when unselected */
-#otherAlcoholsGroup .pill-btn[data-value="Rakı"] {
+#otherAlcoholsGroup .pill-btn[data-value="RakÄ±"] {
 	background-color: rgba(14, 165, 233, 0.04);
 	border-color: rgba(14, 165, 233, 0.15);
 }
-#otherAlcoholsGroup .pill-btn[data-value="Rakı"]:hover {
+#otherAlcoholsGroup .pill-btn[data-value="RakÄ±"]:hover {
 	border-color: rgba(14, 165, 233, 0.3);
 }
 
-#otherAlcoholsGroup .pill-btn[data-value="Şarap"] {
+#otherAlcoholsGroup .pill-btn[data-value="Åarap"] {
 	background-color: rgba(225, 29, 72, 0.04);
 	border-color: rgba(225, 29, 72, 0.15);
 }
-#otherAlcoholsGroup .pill-btn[data-value="Şarap"]:hover {
+#otherAlcoholsGroup .pill-btn[data-value="Åarap"]:hover {
 	border-color: rgba(225, 29, 72, 0.3);
 }
 
@@ -490,11 +490,11 @@ header {
 	border-color: rgba(168, 85, 247, 0.3);
 }
 
-#otherAlcoholsGroup .pill-btn[data-value="İçmiyorum"] {
+#otherAlcoholsGroup .pill-btn[data-value="Ä°Ã§miyorum"] {
 	background-color: rgba(120, 113, 108, 0.04);
 	border-color: rgba(120, 113, 108, 0.15);
 }
-#otherAlcoholsGroup .pill-btn[data-value="İçmiyorum"]:hover {
+#otherAlcoholsGroup .pill-btn[data-value="Ä°Ã§miyorum"]:hover {
 	border-color: rgba(120, 113, 108, 0.3);
 }
 
@@ -995,193 +995,3 @@ header {
 	}
 }
 
-/* Bira Severler Haritası (Snapchat Map) Stilleri */
-.map-view {
-	max-width: 100%;
-	margin: 0 auto;
-	padding: 24px 0;
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	box-sizing: border-box;
-	animation: setupFadeSlideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.map-header {
-	text-align: center;
-	margin-bottom: 20px;
-}
-
-.map-header h1 {
-	font-family: 'SF Pro Rounded', -apple-system, sans-serif;
-	font-size: 2.2rem;
-	font-weight: 900;
-	letter-spacing: -1px;
-	color: #1c1917;
-	margin-bottom: 0;
-}
-
-#mapViewport {
-	position: relative;
-	width: 100%;
-	height: 500px;
-	background: #ffffff;
-	border: none;
-	border-radius: 24px;
-	overflow: hidden;
-	cursor: grab;
-	touch-action: none;
-	user-select: none;
-	-webkit-user-select: none;
-}
-
-#mapViewport:active {
-	cursor: grabbing;
-}
-
-#mapSurface {
-	position: absolute;
-	width: 1005px;
-	height: 490px;
-	transform-origin: 0 0;
-	/* will-change is managed dynamically by JS during gestures only */
-	will-change: auto;
-	/* Başlangıçta görünmez; centerMap() sonrasında JS ile opacity:1 yapılır */
-	opacity: 0;
-}
-
-#mapSurface svg {
-	width: 100%;
-	height: 100%;
-	display: block;
-	pointer-events: auto;
-}
-
-/* SVG Şehir Path Stilleri - Çok soluk, neredeyse beyaz */
-.turkey g path {
-	fill: #f8f7f6; /* Neredeyse beyaz, çok soluk */
-	stroke: #ece9e6; /* Hafif bej/gri sınırlar */
-	stroke-width: 0.7px;
-	transition: fill 0.2s ease, stroke 0.2s ease;
-	cursor: pointer;
-}
-
-/* Kullanıcı Bulunan Şehir (Aktif Şehir) */
-.turkey g.active-city path {
-	fill: #fef3c7;
-	stroke: #fde68a;
-	stroke-width: 0.9px;
-}
-
-/* Şehir Üzerine Gelme Efekti */
-.turkey g:hover path {
-	fill: #fde68a !important;
-	stroke: #f59e0b !important;
-	stroke-width: 1.2px !important;
-}
-
-/* Glassmorphic Harita Tooltip'i */
-.map-tooltip {
-	position: absolute;
-	background: rgba(255, 255, 255, 0.85);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
-	border: 1px solid rgba(231, 229, 228, 0.5);
-	padding: 8px 14px;
-	border-radius: 12px;
-	font-size: 13.5px;
-	font-weight: 600;
-	color: #1c1917;
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-	pointer-events: none;
-	z-index: 100;
-	transform: translate(-50%, -100%);
-	margin-top: -10px;
-	opacity: 0;
-	transition: opacity 0.15s ease, transform 0.1s ease;
-	white-space: nowrap;
-}
-
-.map-tooltip.visible {
-	opacity: 1;
-}
-
-/* Snapchat Tarzı Dairesel Avatar Kabarcıkları */
-.map-city-group {
-	position: absolute;
-	pointer-events: none;
-	z-index: 20;
-	width: 0;
-	height: 0;
-}
-
-.map-avatar-bubble {
-	position: absolute;
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	border: none;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-	background-color: #e7e5e4;
-	cursor: pointer;
-	pointer-events: auto;
-	overflow: hidden;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transform: translate(-50%, -50%) translate(var(--ox, 0px), var(--oy, 0px)) scale(calc(1 / var(--map-scale, 1)));
-	transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-}
-
-.map-avatar-bubble img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
-}
-
-/* Sürükleme/Zoom esnasında avatarların gecikmemesi için transition'ı kapatıyoruz */
-.map-gesturing .map-avatar-bubble {
-	transition: none !important;
-}
-
-.map-avatar-bubble:hover {
-	transform: translate(-50%, -50%) translate(var(--ox, 0px), var(--oy, 0px)) scale(calc(1.2 / var(--map-scale, 1))) !important;
-	z-index: 50;
-	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-}
-
-/* Mobil Ekran Boyutu Uyumlaştırması */
-@media (max-width: 600px) {
-	.map-view {
-		padding: 16px 0;
-	}
-
-	.map-header h1 {
-		font-size: 1.75rem;
-	}
-
-	#mapViewport {
-		height: 60vh;
-		border-radius: 16px;
-	}
-
-	.turkey g path {
-		stroke-width: 0.5px;
-	}
-
-	.turkey g.active-city path {
-		stroke-width: 0.7px;
-	}
-
-	.turkey g:hover path {
-		stroke-width: 1.0px !important;
-	}
-
-	.map-avatar-bubble {
-		width: 32px;
-		height: 32px;
-		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-	}
-}
