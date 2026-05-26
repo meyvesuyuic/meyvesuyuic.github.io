@@ -1022,70 +1022,45 @@ header {
 	margin-bottom: 0;
 }
 
-/* Özel Yatay Kaydırma Göstergesi (Üstte) */
-.map-scroll-track {
-	width: 80px;
-	height: 4px;
-	background: #e7e5e4;
-	border-radius: 2px;
-	margin: 0 auto 20px auto;
-	position: relative;
-	display: block;
-}
-
-.map-scroll-thumb {
-	width: 30px;
-	height: 100%;
-	background: var(--accent-color);
-	border-radius: 2px;
-	position: absolute;
-	left: 0;
-	top: 0;
-	transition: left 0.05s ease-out;
-}
-
-.map-wrapper {
+#mapViewport {
 	position: relative;
 	width: 100%;
+	height: 500px;
 	background: #ffffff;
 	border: none;
-	border-radius: 0;
-	padding: 0;
-	box-shadow: none;
-	box-sizing: border-box;
-	overflow-x: auto;
-	overflow-y: hidden;
-	scrollbar-width: none; /* Firefox */
-	-ms-overflow-style: none; /* IE/Edge */
+	border-radius: 24px;
+	overflow: hidden;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
-.map-wrapper::-webkit-scrollbar {
-	display: none; /* Chrome/Safari */
+#mapViewport:active {
+	cursor: grabbing;
 }
 
-.map-container {
-	position: relative;
-	width: 1200px; /* Bir tık küçültülmüş taban harita genişliği */
-	height: 585px; /* 1200 * (490/1005) aspect ratio */
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-shrink: 0;
-	transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+#mapSurface {
+	position: absolute;
+	width: 1005px;
+	height: 490px;
+	transform-origin: 0 0;
+	will-change: transform;
 }
 
-.map-container svg {
+#mapSurface svg {
 	width: 100%;
 	height: 100%;
 	display: block;
+	pointer-events: auto;
 }
 
 /* SVG Şehir Path Stilleri (Soluk ve İnce Çizgili Tema) */
 .turkey g path {
 	fill: #fafaf9; /* Soluk ve temiz arka plan */
 	stroke: #e7e5e4; /* İnce ve yumuşak gri sınırlar */
-	stroke-width: 0.8px; /* İnceltilmiş sınırlar */
-	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	stroke-width: 0.8px;
+	transition: fill 0.2s ease, stroke 0.2s ease;
 	cursor: pointer;
 }
 
@@ -1101,7 +1076,6 @@ header {
 	fill: #fde68a !important;
 	stroke: #f59e0b !important;
 	stroke-width: 1.5px !important;
-	filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.1));
 }
 
 /* Glassmorphic Harita Tooltip'i */
@@ -1122,53 +1096,12 @@ header {
 	transform: translate(-50%, -100%);
 	margin-top: -10px;
 	opacity: 0;
-	transition: opacity 0.15s ease, transform 0.15s ease;
+	transition: opacity 0.15s ease, transform 0.1s ease;
 	white-space: nowrap;
 }
 
 .map-tooltip.visible {
 	opacity: 1;
-}
-
-/* Harita Yakınlaştırma Kontrolleri */
-.map-zoom-controls {
-	position: absolute;
-	bottom: 16px;
-	right: 16px;
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	z-index: 80;
-}
-
-.btn-zoom {
-	width: 36px;
-	height: 36px;
-	border-radius: 10px;
-	background: rgba(255, 255, 255, 0.85);
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-	border: 1px solid #e7e5e4;
-	color: #1c1917;
-	font-size: 18px;
-	font-weight: 700;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-	transition: all 0.2s ease;
-	user-select: none;
-}
-
-.btn-zoom:hover {
-	background: #ffffff;
-	border-color: #cfd9de;
-	transform: scale(1.05);
-}
-
-.btn-zoom:active {
-	transform: scale(0.95);
 }
 
 /* Snapchat Tarzı Dairesel Avatar Kabarcıkları */
@@ -1186,7 +1119,7 @@ header {
 	height: 40px;
 	border-radius: 50%;
 	border: none;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 	background-color: #e7e5e4;
 	cursor: pointer;
 	pointer-events: auto;
@@ -1194,7 +1127,8 @@ header {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+	transform: translate(-50%, -50%) translate(var(--ox, 0px), var(--oy, 0px)) scale(calc(1 / var(--map-scale, 1)));
+	transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
 }
 
 .map-avatar-bubble img {
@@ -1204,10 +1138,15 @@ header {
 	display: block;
 }
 
+/* Sürükleme/Zoom esnasında avatarların gecikmemesi için transition'ı kapatıyoruz */
+.map-gesturing .map-avatar-bubble {
+	transition: none !important;
+}
+
 .map-avatar-bubble:hover {
-	transform: translate(-50%, -50%) scale(1.2) !important;
+	transform: translate(-50%, -50%) translate(var(--ox, 0px), var(--oy, 0px)) scale(calc(1.2 / var(--map-scale, 1))) !important;
 	z-index: 50;
-	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
 }
 
 /* Mobil Ekran Boyutu Uyumlaştırması */
@@ -1220,6 +1159,11 @@ header {
 		font-size: 1.75rem;
 	}
 
+	#mapViewport {
+		height: 60vh;
+		border-radius: 16px;
+	}
+
 	.turkey g path {
 		stroke-width: 0.5px;
 	}
@@ -1229,16 +1173,12 @@ header {
 	}
 
 	.turkey g:hover path {
-		stroke-width: 1px !important;
+		stroke-width: 1.0px !important;
 	}
 
 	.map-avatar-bubble {
 		width: 32px;
 		height: 32px;
-		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-	}
-
-	.map-avatar-bubble:hover {
-		box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 	}
 }

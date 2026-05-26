@@ -192,20 +192,11 @@
 			<div class="map-header">
 				<h1>harita.</h1>
 			</div>
-			<!-- Özel Yatay Kaydırma Göstergesi (Üst Tarafta) -->
-			<div class="map-scroll-track">
-				<div class="map-scroll-thumb" id="mapScrollThumb"></div>
-			</div>
-			<div class="map-wrapper">
-				<div class="map-container" id="mapContainer">
+			<div class="map-wrapper" id="mapViewport">
+				<div class="map-container" id="mapSurface">
 					<!-- turkey.svg buraya inline olarak yüklenecektir -->
 				</div>
 				<div class="map-tooltip" id="mapTooltip" style="display: none;"></div>
-				<!-- Harita Yakınlaştırma Kontrolleri -->
-				<div class="map-zoom-controls">
-					<button class="btn-zoom" id="zoomInBtn" title="Yakınlaştır">+</button>
-					<button class="btn-zoom" id="zoomOutBtn" title="Uzaklaştır">-</button>
-				</div>
 			</div>
 		</div>
 	</main>

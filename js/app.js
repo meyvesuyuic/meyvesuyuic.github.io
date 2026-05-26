@@ -606,17 +606,233 @@ if (logoutBtnModal) {
 }
 
 // Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
-async function loadBiraMap() {
-	const mapContainer = document.getElementById('mapContainer');
+// Harita Jest ve Ölçekleme Durum Değişkenleri
+let currentScale = 1.0;
+let currentX = 0;
+let currentY = 0;
+let minScale = 0.5;
+let maxScale = 5.0;
+let isMapCenteredOnce = false;
+
+function applyTransform() {
+	const mapSurface = document.getElementById('mapSurface');
+	if (!mapSurface) return;
+	mapSurface.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale})`;
+	mapSurface.style.setProperty('--map-scale', currentScale);
+}
+
+function centerMap() {
+	const mapViewport = document.getElementById('mapViewport');
+	if (!mapViewport) return;
+	
+	const viewportRect = mapViewport.getBoundingClientRect();
+	const w = viewportRect.width;
+	const h = viewportRect.height;
+	
+	if (w === 0 || h === 0) return; // Görünür değilse atla
+	
+	// 1005x490 olan orijinal haritayı sığdır
+	const fitScale = Math.min(w / 1005, h / 490) * 0.95;
+	currentScale = fitScale;
+	
+	minScale = Math.min(w / 1005, h / 490) * 0.7;
+	maxScale = 5.0;
+	
+	currentX = (w - 1005 * currentScale) / 2;
+	currentY = (h - 490 * currentScale) / 2;
+	
+	applyTransform();
+}
+
+// Pencere boyutu değiştiğinde haritayı yeniden merkezle
+window.addEventListener('resize', () => {
 	const mapView = document.getElementById('mapView');
-	if (!mapContainer || !mapView) return;
+	if (mapView && mapView.style.display !== 'none') {
+		centerMap();
+	}
+});
+
+// Jest ve sürükleme dinleyicilerini bağla
+function initMapGestures(mapViewport, mapSurface) {
+	if (mapViewport.dataset.gesturesInitialized) return;
+	mapViewport.dataset.gesturesInitialized = "true";
+
+	let isGesturing = false;
+	let startX = 0;
+	let startY = 0;
+	let baseTransformX = 0;
+	let baseTransformY = 0;
+
+	let isPinching = false;
+	let initialDistance = 0;
+	let initialScale = 1.0;
+	let initialMidX = 0;
+	let initialMidY = 0;
+	let untransformedX = 0;
+	let untransformedY = 0;
+
+	// Mouse Sürükleme (Drag)
+	mapViewport.addEventListener('mousedown', (e) => {
+		if (e.button !== 0) return;
+		if (e.target.closest('.map-avatar-bubble')) return;
+
+		isGesturing = true;
+		mapViewport.classList.add('map-gesturing');
+		startX = e.clientX;
+		startY = e.clientY;
+		baseTransformX = currentX;
+		baseTransformY = currentY;
+
+		e.preventDefault();
+	});
+
+	window.addEventListener('mousemove', (e) => {
+		if (!isGesturing) return;
+
+		const dx = e.clientX - startX;
+		const dy = e.clientY - startY;
+
+		currentX = baseTransformX + dx;
+		currentY = baseTransformY + dy;
+
+		applyTransform();
+	});
+
+	const endDrag = () => {
+		if (isGesturing) {
+			isGesturing = false;
+			mapViewport.classList.remove('map-gesturing');
+		}
+	};
+	window.addEventListener('mouseup', endDrag);
+	window.addEventListener('blur', endDrag);
+
+	// Mouse Wheel Zoom (İmleç Odaklı)
+	mapViewport.addEventListener('wheel', (e) => {
+		e.preventDefault();
+
+		const rect = mapViewport.getBoundingClientRect();
+		const px = e.clientX - rect.left;
+		const py = e.clientY - rect.top;
+
+		const zoomFactor = 1.15;
+		let newScale;
+		if (e.deltaY < 0) {
+			newScale = currentScale * zoomFactor;
+		} else {
+			newScale = currentScale / zoomFactor;
+		}
+
+		newScale = Math.max(minScale, Math.min(maxScale, newScale));
+
+		const scaleRatio = newScale / currentScale;
+		currentX = px - (px - currentX) * scaleRatio;
+		currentY = py - (py - currentY) * scaleRatio;
+		currentScale = newScale;
+
+		applyTransform();
+	}, { passive: false });
+
+	// Mobil Dokunmatik (Touch Pan & Pinch Zoom)
+	mapViewport.addEventListener('touchstart', (e) => {
+		if (e.target.closest('.map-avatar-bubble')) return;
+
+		mapViewport.classList.add('map-gesturing');
+
+		if (e.touches.length === 1) {
+			isGesturing = true;
+			isPinching = false;
+
+			startX = e.touches[0].clientX;
+			startY = e.touches[0].clientY;
+			baseTransformX = currentX;
+			baseTransformY = currentY;
+		} else if (e.touches.length === 2) {
+			isGesturing = false;
+			isPinching = true;
+
+			const t1 = e.touches[0];
+			const t2 = e.touches[1];
+
+			initialDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+			initialScale = currentScale;
+
+			const rect = mapViewport.getBoundingClientRect();
+			initialMidX = (t1.clientX + t2.clientX) / 2 - rect.left;
+			initialMidY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+			untransformedX = (initialMidX - currentX) / currentScale;
+			untransformedY = (initialMidY - currentY) / currentScale;
+		}
+	}, { passive: false });
+
+	mapViewport.addEventListener('touchmove', (e) => {
+		e.preventDefault();
+
+		if (isGesturing && e.touches.length === 1) {
+			const touch = e.touches[0];
+			const dx = touch.clientX - startX;
+			const dy = touch.clientY - startY;
+
+			currentX = baseTransformX + dx;
+			currentY = baseTransformY + dy;
+
+			applyTransform();
+		} else if (isPinching && e.touches.length === 2) {
+			const t1 = e.touches[0];
+			const t2 = e.touches[1];
+
+			const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+			if (dist === 0 || initialDistance === 0) return;
+
+			let newScale = initialScale * (dist / initialDistance);
+			newScale = Math.max(minScale, Math.min(maxScale, newScale));
+
+			const rect = mapViewport.getBoundingClientRect();
+			const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+			const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+			currentX = midX - untransformedX * newScale;
+			currentY = midY - untransformedY * newScale;
+			currentScale = newScale;
+
+			applyTransform();
+		}
+	}, { passive: false });
+
+	const endTouch = (e) => {
+		if (e.touches.length === 0) {
+			isGesturing = false;
+			isPinching = false;
+			mapViewport.classList.remove('map-gesturing');
+		} else if (e.touches.length === 1) {
+			isPinching = false;
+			isGesturing = true;
+
+			const touch = e.touches[0];
+			startX = touch.clientX;
+			startY = touch.clientY;
+			baseTransformX = currentX;
+			baseTransformY = currentY;
+		}
+	};
+	mapViewport.addEventListener('touchend', endTouch);
+	mapViewport.addEventListener('touchcancel', endTouch);
+}
+
+// Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
+async function loadBiraMap() {
+	const mapViewport = document.getElementById('mapViewport');
+	const mapSurface = document.getElementById('mapSurface');
+	const mapView = document.getElementById('mapView');
+	if (!mapViewport || !mapSurface || !mapView) return;
 
 	// 1. SVG Haritasını Çek ve Inline Enjekte Et
-	if (!mapContainer.querySelector('svg')) {
+	if (!mapSurface.querySelector('svg')) {
 		try {
 			const res = await fetch('/turkey.svg');
 			const svgText = await res.text();
-			mapContainer.innerHTML = svgText;
+			mapSurface.innerHTML = svgText;
 		} catch (err) {
 			console.error("Harita yüklenirken hata oluştu:", err);
 			return;
@@ -658,7 +874,6 @@ async function loadBiraMap() {
 	svgTurkey.querySelectorAll('g.active-city').forEach(el => el.classList.remove('active-city'));
 
 	const tooltip = document.getElementById('mapTooltip');
-	const mapWrapper = document.querySelector('.map-wrapper');
 
 	// Haritadaki şehir gruplarını dinle (Tooltip için)
 	const cityGroupsSvg = svgTurkey.querySelectorAll('g');
@@ -678,7 +893,7 @@ async function loadBiraMap() {
 		});
 
 		g.addEventListener('mousemove', (e) => {
-			const wrapperRect = mapWrapper.getBoundingClientRect();
+			const wrapperRect = mapViewport.getBoundingClientRect();
 			const x = e.clientX - wrapperRect.left;
 			const y = e.clientY - wrapperRect.top;
 			tooltip.style.left = `${x}px`;
@@ -753,82 +968,27 @@ async function loadBiraMap() {
 				const radius = isMobile ? 18 : 24;
 				const ox = Math.cos(angle) * radius;
 				const oy = Math.sin(angle) * radius;
-				avatarBubble.style.transform = `translate(-50%, -50%) translate(${ox}px, ${oy}px)`;
+				avatarBubble.style.setProperty('--ox', `${ox}px`);
+				avatarBubble.style.setProperty('--oy', `${oy}px`);
 			} else {
-				avatarBubble.style.transform = 'translate(-50%, -50%)';
+				avatarBubble.style.setProperty('--ox', '0px');
+				avatarBubble.style.setProperty('--oy', '0px');
 			}
 
 			cityGroupDiv.appendChild(avatarBubble);
 		});
 
-		mapContainer.appendChild(cityGroupDiv);
+		mapSurface.appendChild(cityGroupDiv);
 	});
 
-	// 5. Özel yatay kaydırma göstergesi senkronizasyonu
-	const mapScrollThumb = document.getElementById('mapScrollThumb');
-	if (mapWrapper && mapScrollThumb) {
-		mapWrapper.scrollLeft = 0;
-		mapScrollThumb.style.left = '0px';
-
-		mapWrapper.onscroll = () => {
-			const maxScroll = mapWrapper.scrollWidth - mapWrapper.clientWidth;
-			if (maxScroll <= 0) {
-				mapScrollThumb.style.left = '0px';
-				return;
-			}
-			const scrollRatio = mapWrapper.scrollLeft / maxScroll;
-			const maxThumbLeft = 50; // 80px track - 30px thumb
-			mapScrollThumb.style.left = `${scrollRatio * maxThumbLeft}px`;
-		};
-	}
-
-	// 6. Harita Yakınlaştırma / Uzaklaştırma (Zoom) Kontrolü
-	const zoomInBtn = document.getElementById('zoomInBtn');
-	const zoomOutBtn = document.getElementById('zoomOutBtn');
-	let zoomLevel = 1.0;
-	const minZoom = 0.8;
-	const maxZoom = 2.0;
-	const zoomStep = 0.2;
-
-	function updateMapZoom() {
-		const baseWidth = 1200;
-		const newWidth = baseWidth * zoomLevel;
-		const newHeight = newWidth * (490 / 1005);
-		
-		mapContainer.style.width = `${newWidth}px`;
-		mapContainer.style.height = `${newHeight}px`;
-
-		setTimeout(() => {
-			if (mapWrapper) {
-				const maxScroll = mapWrapper.scrollWidth - mapWrapper.clientWidth;
-				if (maxScroll <= 0) {
-					mapScrollThumb.style.left = '0px';
-					return;
-				}
-				const scrollRatio = mapWrapper.scrollLeft / maxScroll;
-				const maxThumbLeft = 50;
-				mapScrollThumb.style.left = `${scrollRatio * maxThumbLeft}px`;
-			}
-		}, 320); // 0.3s transition + 20ms buffer
-	}
-
-	if (zoomInBtn && zoomOutBtn) {
-		zoomInBtn.onclick = null;
-		zoomOutBtn.onclick = null;
-
-		zoomInBtn.onclick = () => {
-			if (zoomLevel < maxZoom) {
-				zoomLevel = parseFloat((zoomLevel + zoomStep).toFixed(1));
-				updateMapZoom();
-			}
-		};
-
-		zoomOutBtn.onclick = () => {
-			if (zoomLevel > minZoom) {
-				zoomLevel = parseFloat((zoomLevel - zoomStep).toFixed(1));
-				updateMapZoom();
-			}
-		};
+	// 5. Harita Jestlerini ve Merkezlemeyi Başlat
+	initMapGestures(mapViewport, mapSurface);
+	
+	if (!isMapCenteredOnce) {
+		centerMap();
+		isMapCenteredOnce = true;
+	} else {
+		applyTransform();
 	}
 }
 
