@@ -606,15 +606,15 @@ if (logoutBtnModal) {
 }
 
 // Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
-// Harita Jest ve Ölçekleme Durum Değişkenleri
+// ─── Harita Durum Değişkenleri ─────────────────────────────────────────────
 let currentScale = 1.0;
 let currentX = 0;
 let currentY = 0;
-let minScale = 0.5;
-let maxScale = 5.0;
+let minScale = 0.3;
+let maxScale = 4.0;
 let isMapCenteredOnce = false;
 
-// Haritanın viewport dışına tamamen çıkmasını engeller
+// ─── Viewport Sınır Kontrolü ────────────────────────────────────────────────
 function clampTransform() {
 	const mapViewport = document.getElementById('mapViewport');
 	if (!mapViewport) return;
@@ -622,7 +622,6 @@ function clampTransform() {
 	const vh = mapViewport.clientHeight;
 	const mapW = 1005 * currentScale;
 	const mapH = 490 * currentScale;
-	// En az 80px'i her zaman görünür kalsın
 	const margin = 80;
 	currentX = Math.min(currentX, vw - margin);
 	currentX = Math.max(currentX, margin - mapW);
@@ -630,7 +629,8 @@ function clampTransform() {
 	currentY = Math.max(currentY, margin - mapH);
 }
 
-function applyTransform() {
+// ─── Transform Uygulama (doğrudan, animasyonsuz) ────────────────────────────
+function applyTransformDirect() {
 	const mapSurface = document.getElementById('mapSurface');
 	if (!mapSurface) return;
 	clampTransform();
@@ -638,31 +638,31 @@ function applyTransform() {
 	mapSurface.style.setProperty('--map-scale', currentScale);
 }
 
+// Dışarıdan çağrılabilen alias
+function applyTransform() { applyTransformDirect(); }
+
+// ─── Harita Merkezleme ───────────────────────────────────────────────────────
 function centerMap(isFirstTime = false) {
 	const mapViewport = document.getElementById('mapViewport');
 	if (!mapViewport) return;
-	
+
 	const viewportRect = mapViewport.getBoundingClientRect();
 	const w = viewportRect.width;
 	const h = viewportRect.height;
-	
 	if (w === 0 || h === 0) return;
-	
-	// 1005x490 olan orijinal haritayı sığdır
+
 	const fitScale = Math.min(w / 1005, h / 490) * 0.92;
 	currentScale = fitScale;
-	
-	minScale = Math.max(0.2, Math.min(w / 1005, h / 490) * 0.5);
+	minScale = Math.max(0.2, Math.min(w / 1005, h / 490) * 0.45);
 	maxScale = 4.0;
-	
 	currentX = (w - 1005 * currentScale) / 2;
 	currentY = (h - 490 * currentScale) / 2;
-	
+
 	const mapSurface = document.getElementById('mapSurface');
 	if (!mapSurface) return;
-	
+
 	if (isFirstTime) {
-		// Flash'ı engelle: transform'ı sessizce uygula, ardından fade-in yap
+		// Flash olmadan: önce transform'ı uygula (görünmez halde), sonra fade-in
 		mapSurface.style.transition = 'none';
 		mapSurface.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale})`;
 		mapSurface.style.setProperty('--map-scale', currentScale);
@@ -672,200 +672,296 @@ function centerMap(isFirstTime = false) {
 			setTimeout(() => { mapSurface.style.transition = ''; }, 350);
 		});
 	} else {
-		// Resize esnasında: sessizce güncelle, fade yok
-		applyTransform();
+		applyTransformDirect();
 	}
 }
 
-// Pencere boyutu değiştiğinde haritayı sessizce konumlandır (fade yok)
+// Resize'da sessizce yeniden merkezle
 window.addEventListener('resize', () => {
 	const mapView = document.getElementById('mapView');
-	if (mapView && mapView.style.display !== 'none') {
-		centerMap(false);
-	}
+	if (mapView && mapView.style.display !== 'none') centerMap(false);
 });
 
-
-// Jest ve sürükleme dinleyicilerini bağla
+// ─── Jest Motoru: Google Maps Kalitesinde Pan + Zoom ────────────────────────
 function initMapGestures(mapViewport, mapSurface) {
 	if (mapViewport.dataset.gesturesInitialized) return;
-	mapViewport.dataset.gesturesInitialized = "true";
+	mapViewport.dataset.gesturesInitialized = 'true';
 
-	let isGesturing = false;
-	let startX = 0;
-	let startY = 0;
-	let baseTransformX = 0;
-	let baseTransformY = 0;
+	// --- Momentum değişkenleri ---
+	let velX = 0;
+	let velY = 0;
+	let momentumAnimId = null;
+	const FRICTION = 0.93; // ne kadar süre kayacak (0.9=az, 0.97=çok)
+	const MIN_VEL = 0.3;   // durma eşiği (px/frame)
 
+	// --- Drag değişkenleri ---
+	let isDragging = false;
+	let dragStartX = 0;
+	let dragStartY = 0;
+	let dragBaseX = 0;
+	let dragBaseY = 0;
+	let lastMoveX = 0;
+	let lastMoveY = 0;
+	let lastMoveTime = 0;
+
+	// --- Zoom animasyonu değişkenleri ---
+	let zoomTargetScale = currentScale;
+	let zoomTargetX = currentX;
+	let zoomTargetY = currentY;
+	let zoomAnimId = null;
+
+	// --- Pinch değişkenleri ---
 	let isPinching = false;
-	let initialDistance = 0;
-	let initialScale = 1.0;
-	let initialMidX = 0;
-	let initialMidY = 0;
-	let untransformedX = 0;
-	let untransformedY = 0;
+	let pinchInitialDist = 0;
+	let pinchInitialScale = 1.0;
+	let pinchUntransX = 0;
+	let pinchUntransY = 0;
 
-	// Aktif gesture esnasında will-change ekle, bitince kaldır (SVG çözünürlüğünü korur)
-	function startGestureMode() {
-		mapSurface.style.willChange = 'transform';
-		mapViewport.classList.add('map-gesturing');
-	}
-	function endGestureMode() {
-		// Kısa bir gecikmeyle kaldır ki son frame düzgün çizilsin
-		setTimeout(() => {
-			mapSurface.style.willChange = 'auto';
-		}, 100);
-		mapViewport.classList.remove('map-gesturing');
+	// ── Yardımcı ──────────────────────────────────────────────────────────
+	function setGestureMode(active) {
+		if (active) {
+			mapSurface.style.willChange = 'transform';
+			mapViewport.classList.add('map-gesturing');
+		} else {
+			setTimeout(() => { mapSurface.style.willChange = 'auto'; }, 120);
+			mapViewport.classList.remove('map-gesturing');
+		}
 	}
 
-	// Mouse Sürükleme (Drag)
+	function stopMomentum() {
+		if (momentumAnimId) { cancelAnimationFrame(momentumAnimId); momentumAnimId = null; }
+		velX = velY = 0;
+	}
+
+	function stopZoomAnim() {
+		if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
+	}
+
+	// ── Momentum Animasyonu ────────────────────────────────────────────────
+	function runMomentum() {
+		velX *= FRICTION;
+		velY *= FRICTION;
+		currentX += velX;
+		currentY += velY;
+		applyTransformDirect();
+
+		if (Math.abs(velX) > MIN_VEL || Math.abs(velY) > MIN_VEL) {
+			momentumAnimId = requestAnimationFrame(runMomentum);
+		} else {
+			momentumAnimId = null;
+			setGestureMode(false);
+		}
+	}
+
+	// ── Smooth Zoom Animasyonu (hedef scale'e ease-out ile git) ────────────
+	function runZoomAnim() {
+		const ease = 0.16;
+		const ds = zoomTargetScale - currentScale;
+		const dx = zoomTargetX - currentX;
+		const dy = zoomTargetY - currentY;
+
+		if (Math.abs(ds) < 0.0008 && Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
+			currentScale = zoomTargetScale;
+			currentX = zoomTargetX;
+			currentY = zoomTargetY;
+			applyTransformDirect();
+			zoomAnimId = null;
+			setGestureMode(false);
+			return;
+		}
+
+		currentScale += ds * ease;
+		currentX += dx * ease;
+		currentY += dy * ease;
+		applyTransformDirect();
+		zoomAnimId = requestAnimationFrame(runZoomAnim);
+	}
+
+	// ── Mouse Drag ─────────────────────────────────────────────────────────
 	mapViewport.addEventListener('mousedown', (e) => {
 		if (e.button !== 0) return;
 		if (e.target.closest('.map-avatar-bubble')) return;
 
-		isGesturing = true;
-		startGestureMode();
-		startX = e.clientX;
-		startY = e.clientY;
-		baseTransformX = currentX;
-		baseTransformY = currentY;
+		stopMomentum();
+		stopZoomAnim();
 
+		isDragging = true;
+		setGestureMode(true);
+		dragStartX = lastMoveX = e.clientX;
+		dragStartY = lastMoveY = e.clientY;
+		dragBaseX = currentX;
+		dragBaseY = currentY;
+		velX = velY = 0;
+		lastMoveTime = performance.now();
 		e.preventDefault();
 	});
 
 	window.addEventListener('mousemove', (e) => {
-		if (!isGesturing) return;
+		if (!isDragging) return;
+		const now = performance.now();
+		const dt = Math.max(1, now - lastMoveTime);
 
-		const dx = e.clientX - startX;
-		const dy = e.clientY - startY;
+		// Hız takibi (normalize: 16ms = 1 frame ~60fps)
+		velX = (e.clientX - lastMoveX) / dt * 16;
+		velY = (e.clientY - lastMoveY) / dt * 16;
+		lastMoveX = e.clientX;
+		lastMoveY = e.clientY;
+		lastMoveTime = now;
 
-		currentX = baseTransformX + dx;
-		currentY = baseTransformY + dy;
-
-		applyTransform();
+		currentX = dragBaseX + (e.clientX - dragStartX);
+		currentY = dragBaseY + (e.clientY - dragStartY);
+		applyTransformDirect();
 	});
 
-	const endDrag = () => {
-		if (isGesturing) {
-			isGesturing = false;
-			endGestureMode();
+	const endMouseDrag = () => {
+		if (!isDragging) return;
+		isDragging = false;
+		// Yeterli hız varsa momentum başlat
+		if (Math.abs(velX) > MIN_VEL || Math.abs(velY) > MIN_VEL) {
+			momentumAnimId = requestAnimationFrame(runMomentum);
+		} else {
+			setGestureMode(false);
 		}
 	};
-	window.addEventListener('mouseup', endDrag);
-	window.addEventListener('blur', endDrag);
+	window.addEventListener('mouseup', endMouseDrag);
+	window.addEventListener('blur', () => { isDragging = false; stopMomentum(); setGestureMode(false); });
 
-	// Mouse Wheel Zoom (İmleç Odaklı)
+	// ── Mouse Wheel Zoom (smooth, cursor-centered) ─────────────────────────
 	mapViewport.addEventListener('wheel', (e) => {
 		e.preventDefault();
+		stopMomentum();
 
 		const rect = mapViewport.getBoundingClientRect();
 		const px = e.clientX - rect.left;
 		const py = e.clientY - rect.top;
 
-		const zoomFactor = 1.08;
-		let newScale;
-		if (e.deltaY < 0) {
-			newScale = currentScale * zoomFactor;
-		} else {
-			newScale = currentScale / zoomFactor;
-		}
+		// Normalleştirilmiş delta (trackpad vs fare tekerleği)
+		let delta = e.deltaY;
+		if (e.deltaMode === 1) delta *= 30; // satır bazlı
+		if (e.deltaMode === 2) delta *= 300; // sayfa bazlı
+		const factor = Math.pow(1.0012, -delta); // çok yumuşak, birikimli
 
-		newScale = Math.max(minScale, Math.min(maxScale, newScale));
+		// Zoom hedefini güncelle (mevcut animasyon üzerine katla)
+		let newTargetScale = zoomTargetScale * factor;
+		newTargetScale = Math.max(minScale, Math.min(maxScale, newTargetScale));
+		const scaleRatio = newTargetScale / zoomTargetScale;
 
-		const scaleRatio = newScale / currentScale;
-		currentX = px - (px - currentX) * scaleRatio;
-		currentY = py - (py - currentY) * scaleRatio;
-		currentScale = newScale;
+		// Hedef pozisyonu imlece göre hesapla
+		zoomTargetX = px - (px - zoomTargetX) * scaleRatio;
+		zoomTargetY = py - (py - zoomTargetY) * scaleRatio;
+		zoomTargetScale = newTargetScale;
 
-		applyTransform();
+		setGestureMode(true);
+		if (!zoomAnimId) zoomAnimId = requestAnimationFrame(runZoomAnim);
 	}, { passive: false });
 
-	// Mobil Dokunmatik (Touch Pan & Pinch Zoom)
+	// ── Touch Pan (tek parmak, momentum'lu) ───────────────────────────────
+	let touchPrevX = 0;
+	let touchPrevY = 0;
+	let touchPrevTime = 0;
+
 	mapViewport.addEventListener('touchstart', (e) => {
 		if (e.target.closest('.map-avatar-bubble')) return;
 
-		startGestureMode();
+		stopMomentum();
+		stopZoomAnim();
+		setGestureMode(true);
 
 		if (e.touches.length === 1) {
-			isGesturing = true;
 			isPinching = false;
-
-			startX = e.touches[0].clientX;
-			startY = e.touches[0].clientY;
-			baseTransformX = currentX;
-			baseTransformY = currentY;
+			isDragging = true;
+			const t = e.touches[0];
+			dragStartX = touchPrevX = lastMoveX = t.clientX;
+			dragStartY = touchPrevY = lastMoveY = t.clientY;
+			dragBaseX = currentX;
+			dragBaseY = currentY;
+			velX = velY = 0;
+			touchPrevTime = lastMoveTime = performance.now();
 		} else if (e.touches.length === 2) {
-			isGesturing = false;
+			isDragging = false;
 			isPinching = true;
-
+			velX = velY = 0;
 			const t1 = e.touches[0];
 			const t2 = e.touches[1];
-
-			initialDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-			initialScale = currentScale;
-
+			pinchInitialDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+			pinchInitialScale = currentScale;
 			const rect = mapViewport.getBoundingClientRect();
-			initialMidX = (t1.clientX + t2.clientX) / 2 - rect.left;
-			initialMidY = (t1.clientY + t2.clientY) / 2 - rect.top;
-
-			untransformedX = (initialMidX - currentX) / currentScale;
-			untransformedY = (initialMidY - currentY) / currentScale;
+			const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+			const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+			pinchUntransX = (midX - currentX) / currentScale;
+			pinchUntransY = (midY - currentY) / currentScale;
 		}
 	}, { passive: false });
 
 	mapViewport.addEventListener('touchmove', (e) => {
 		e.preventDefault();
+		const now = performance.now();
 
-		if (isGesturing && e.touches.length === 1) {
-			const touch = e.touches[0];
-			const dx = touch.clientX - startX;
-			const dy = touch.clientY - startY;
+		if (isDragging && e.touches.length === 1) {
+			const t = e.touches[0];
+			const dt = Math.max(1, now - touchPrevTime);
+			velX = (t.clientX - touchPrevX) / dt * 16;
+			velY = (t.clientY - touchPrevY) / dt * 16;
+			touchPrevX = t.clientX;
+			touchPrevY = t.clientY;
+			touchPrevTime = now;
 
-			currentX = baseTransformX + dx;
-			currentY = baseTransformY + dy;
-
-			applyTransform();
+			currentX = dragBaseX + (t.clientX - dragStartX);
+			currentY = dragBaseY + (t.clientY - dragStartY);
+			applyTransformDirect();
 		} else if (isPinching && e.touches.length === 2) {
 			const t1 = e.touches[0];
 			const t2 = e.touches[1];
-
 			const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-			if (dist === 0 || initialDistance === 0) return;
+			if (dist === 0 || pinchInitialDist === 0) return;
 
-			let newScale = initialScale * (dist / initialDistance);
+			let newScale = pinchInitialScale * (dist / pinchInitialDist);
 			newScale = Math.max(minScale, Math.min(maxScale, newScale));
 
 			const rect = mapViewport.getBoundingClientRect();
 			const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
 			const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
-
-			currentX = midX - untransformedX * newScale;
-			currentY = midY - untransformedY * newScale;
+			currentX = midX - pinchUntransX * newScale;
+			currentY = midY - pinchUntransY * newScale;
 			currentScale = newScale;
-
-			applyTransform();
+			applyTransformDirect();
 		}
 	}, { passive: false });
 
-	const endTouch = (e) => {
+	mapViewport.addEventListener('touchend', (e) => {
 		if (e.touches.length === 0) {
-			isGesturing = false;
 			isPinching = false;
-			endGestureMode();
-		} else if (e.touches.length === 1) {
+			if (isDragging) {
+				isDragging = false;
+				if (Math.abs(velX) > MIN_VEL || Math.abs(velY) > MIN_VEL) {
+					momentumAnimId = requestAnimationFrame(runMomentum);
+				} else {
+					setGestureMode(false);
+				}
+			} else {
+				setGestureMode(false);
+			}
+		} else if (e.touches.length === 1 && isPinching) {
+			// Pinch bitti, tek parmak kaldı → pan'e geç
 			isPinching = false;
-			isGesturing = true;
-
-			const touch = e.touches[0];
-			startX = touch.clientX;
-			startY = touch.clientY;
-			baseTransformX = currentX;
-			baseTransformY = currentY;
+			isDragging = true;
+			const t = e.touches[0];
+			dragStartX = touchPrevX = t.clientX;
+			dragStartY = touchPrevY = t.clientY;
+			dragBaseX = currentX;
+			dragBaseY = currentY;
+			velX = velY = 0;
+			touchPrevTime = performance.now();
 		}
-	};
-	mapViewport.addEventListener('touchend', endTouch);
-	mapViewport.addEventListener('touchcancel', endTouch);
+	});
+	mapViewport.addEventListener('touchcancel', () => {
+		isDragging = false;
+		isPinching = false;
+		stopMomentum();
+		setGestureMode(false);
+	});
 }
+
 
 // Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
 async function loadBiraMap() {
