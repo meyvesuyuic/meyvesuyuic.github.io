@@ -14,7 +14,7 @@ if (!fs.existsSync(svgPath)) {
 
 const svgContent = fs.readFileSync(svgPath, 'utf8');
 
-// Clean and recreate output directory to remove old files (like istanbul-avrupa.svg)
+// Clean and recreate output directory to remove old files
 if (fs.existsSync(outputDir)) {
     console.log('Cleaning old files in cities directory...');
     const files = fs.readdirSync(outputDir);
@@ -41,7 +41,6 @@ const svgAttributes = svgTagMatch[1].trim();
 // Tokenizer for SVG path data d="..."
 function tokenize(d) {
     const tokens = [];
-    // Capture command letters or floats (supporting decimals, signs, exponents)
     const regex = /([a-zA-Z])|([-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?)/g;
     let match;
     while ((match = regex.exec(d)) !== null) {
@@ -249,7 +248,6 @@ const codeToPhone = {
 // Match all path elements (including their closing tags) and group them by city code.
 console.log('Extracting paths and grouping by city code...');
 
-// Match from '<path' to the next '</path>'
 const pathRegex = /<path[\s\S]*?<\/path>/gi;
 let match;
 const cityPaths = {}; // cityCode -> array of path tags
