@@ -161,9 +161,14 @@ function initSetupLogic(user, twitterData) {
 	// Şehirleri dropdown listesine dinamik olarak doldur (81 il)
 	if (citySelect) {
 		citySelect.innerHTML = '<option value="" disabled selected>Şehir Seçin</option>';
-		// Şehir isimlerini Türkçe sıralamaya göre alfabetik sıralayalım
-		const cities = Object.keys(districtsMap).sort((a, b) => a.localeCompare(b, 'tr'));
-		cities.forEach(city => {
+		// İstanbul, Ankara, İzmir'i başa alıp diğer şehirleri alfabetik sıralayalım
+		const priorityCities = ["İstanbul", "Ankara", "İzmir"];
+		const otherCities = Object.keys(districtsMap)
+			.filter(c => !priorityCities.includes(c))
+			.sort((a, b) => a.localeCompare(b, 'tr'));
+		const sortedCities = [...priorityCities, ...otherCities];
+
+		sortedCities.forEach(city => {
 			const opt = document.createElement('option');
 			opt.value = city;
 			opt.innerText = city;
@@ -178,6 +183,12 @@ function initSetupLogic(user, twitterData) {
 			districtSelect.innerHTML = '<option value="" disabled selected>İlçe Seçin</option>';
 			
 			if (districtsMap[city]) {
+				// Bütün Şehir seçeneğini ilçe listesinin başına ekle
+				const allOpt = document.createElement('option');
+				allOpt.value = "Bütün Şehir";
+				allOpt.innerText = "Bütün Şehir";
+				districtSelect.appendChild(allOpt);
+
 				districtsMap[city].forEach(district => {
 					const opt = document.createElement('option');
 					opt.value = district;
