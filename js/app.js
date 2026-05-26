@@ -614,14 +614,31 @@ let minScale = 0.5;
 let maxScale = 5.0;
 let isMapCenteredOnce = false;
 
+// Haritanın viewport dışına tamamen çıkmasını engeller
+function clampTransform() {
+	const mapViewport = document.getElementById('mapViewport');
+	if (!mapViewport) return;
+	const vw = mapViewport.clientWidth;
+	const vh = mapViewport.clientHeight;
+	const mapW = 1005 * currentScale;
+	const mapH = 490 * currentScale;
+	// En az 80px'i her zaman görünür kalsın
+	const margin = 80;
+	currentX = Math.min(currentX, vw - margin);
+	currentX = Math.max(currentX, margin - mapW);
+	currentY = Math.min(currentY, vh - margin);
+	currentY = Math.max(currentY, margin - mapH);
+}
+
 function applyTransform() {
 	const mapSurface = document.getElementById('mapSurface');
 	if (!mapSurface) return;
+	clampTransform();
 	mapSurface.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale})`;
 	mapSurface.style.setProperty('--map-scale', currentScale);
 }
 
-function centerMap() {
+function centerMap(isFirstTime = false) {
 	const mapViewport = document.getElementById('mapViewport');
 	if (!mapViewport) return;
 	
@@ -629,28 +646,45 @@ function centerMap() {
 	const w = viewportRect.width;
 	const h = viewportRect.height;
 	
-	if (w === 0 || h === 0) return; // Görünür değilse atla
+	if (w === 0 || h === 0) return;
 	
 	// 1005x490 olan orijinal haritayı sığdır
-	const fitScale = Math.min(w / 1005, h / 490) * 0.95;
+	const fitScale = Math.min(w / 1005, h / 490) * 0.92;
 	currentScale = fitScale;
 	
-	minScale = Math.min(w / 1005, h / 490) * 0.7;
-	maxScale = 5.0;
+	minScale = Math.max(0.2, Math.min(w / 1005, h / 490) * 0.5);
+	maxScale = 4.0;
 	
 	currentX = (w - 1005 * currentScale) / 2;
 	currentY = (h - 490 * currentScale) / 2;
 	
-	applyTransform();
+	const mapSurface = document.getElementById('mapSurface');
+	if (!mapSurface) return;
+	
+	if (isFirstTime) {
+		// Flash'ı engelle: transform'ı sessizce uygula, ardından fade-in yap
+		mapSurface.style.transition = 'none';
+		mapSurface.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale})`;
+		mapSurface.style.setProperty('--map-scale', currentScale);
+		requestAnimationFrame(() => {
+			mapSurface.style.transition = 'opacity 0.3s ease';
+			mapSurface.style.opacity = '1';
+			setTimeout(() => { mapSurface.style.transition = ''; }, 350);
+		});
+	} else {
+		// Resize esnasında: sessizce güncelle, fade yok
+		applyTransform();
+	}
 }
 
-// Pencere boyutu değiştiğinde haritayı yeniden merkezle
+// Pencere boyutu değiştiğinde haritayı sessizce konumlandır (fade yok)
 window.addEventListener('resize', () => {
 	const mapView = document.getElementById('mapView');
 	if (mapView && mapView.style.display !== 'none') {
-		centerMap();
+		centerMap(false);
 	}
 });
+
 
 // Jest ve sürükleme dinleyicilerini bağla
 function initMapGestures(mapViewport, mapSurface) {
@@ -671,13 +705,26 @@ function initMapGestures(mapViewport, mapSurface) {
 	let untransformedX = 0;
 	let untransformedY = 0;
 
+	// Aktif gesture esnasında will-change ekle, bitince kaldır (SVG çözünürlüğünü korur)
+	function startGestureMode() {
+		mapSurface.style.willChange = 'transform';
+		mapViewport.classList.add('map-gesturing');
+	}
+	function endGestureMode() {
+		// Kısa bir gecikmeyle kaldır ki son frame düzgün çizilsin
+		setTimeout(() => {
+			mapSurface.style.willChange = 'auto';
+		}, 100);
+		mapViewport.classList.remove('map-gesturing');
+	}
+
 	// Mouse Sürükleme (Drag)
 	mapViewport.addEventListener('mousedown', (e) => {
 		if (e.button !== 0) return;
 		if (e.target.closest('.map-avatar-bubble')) return;
 
 		isGesturing = true;
-		mapViewport.classList.add('map-gesturing');
+		startGestureMode();
 		startX = e.clientX;
 		startY = e.clientY;
 		baseTransformX = currentX;
@@ -701,7 +748,7 @@ function initMapGestures(mapViewport, mapSurface) {
 	const endDrag = () => {
 		if (isGesturing) {
 			isGesturing = false;
-			mapViewport.classList.remove('map-gesturing');
+			endGestureMode();
 		}
 	};
 	window.addEventListener('mouseup', endDrag);
@@ -715,7 +762,7 @@ function initMapGestures(mapViewport, mapSurface) {
 		const px = e.clientX - rect.left;
 		const py = e.clientY - rect.top;
 
-		const zoomFactor = 1.15;
+		const zoomFactor = 1.08;
 		let newScale;
 		if (e.deltaY < 0) {
 			newScale = currentScale * zoomFactor;
@@ -737,7 +784,7 @@ function initMapGestures(mapViewport, mapSurface) {
 	mapViewport.addEventListener('touchstart', (e) => {
 		if (e.target.closest('.map-avatar-bubble')) return;
 
-		mapViewport.classList.add('map-gesturing');
+		startGestureMode();
 
 		if (e.touches.length === 1) {
 			isGesturing = true;
@@ -804,7 +851,7 @@ function initMapGestures(mapViewport, mapSurface) {
 		if (e.touches.length === 0) {
 			isGesturing = false;
 			isPinching = false;
-			mapViewport.classList.remove('map-gesturing');
+			endGestureMode();
 		} else if (e.touches.length === 1) {
 			isPinching = false;
 			isGesturing = true;
@@ -985,7 +1032,7 @@ async function loadBiraMap() {
 	initMapGestures(mapViewport, mapSurface);
 	
 	if (!isMapCenteredOnce) {
-		centerMap();
+		centerMap(true); // ilk yükleme: fade-in ile
 		isMapCenteredOnce = true;
 	} else {
 		applyTransform();

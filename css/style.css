@@ -1045,7 +1045,10 @@ header {
 	width: 1005px;
 	height: 490px;
 	transform-origin: 0 0;
-	will-change: transform;
+	/* will-change is managed dynamically by JS during gestures only */
+	will-change: auto;
+	/* Başlangıçta görünmez; centerMap() sonrasında JS ile opacity:1 yapılır */
+	opacity: 0;
 }
 
 #mapSurface svg {
@@ -1055,11 +1058,11 @@ header {
 	pointer-events: auto;
 }
 
-/* SVG Şehir Path Stilleri (Soluk ve İnce Çizgili Tema) */
+/* SVG Şehir Path Stilleri - Çok soluk, neredeyse beyaz */
 .turkey g path {
-	fill: #fafaf9; /* Soluk ve temiz arka plan */
-	stroke: #e7e5e4; /* İnce ve yumuşak gri sınırlar */
-	stroke-width: 0.8px;
+	fill: #f8f7f6; /* Neredeyse beyaz, çok soluk */
+	stroke: #ece9e6; /* Hafif bej/gri sınırlar */
+	stroke-width: 0.7px;
 	transition: fill 0.2s ease, stroke 0.2s ease;
 	cursor: pointer;
 }
@@ -1068,14 +1071,14 @@ header {
 .turkey g.active-city path {
 	fill: #fef3c7;
 	stroke: #fde68a;
-	stroke-width: 1px;
+	stroke-width: 0.9px;
 }
 
 /* Şehir Üzerine Gelme Efekti */
 .turkey g:hover path {
 	fill: #fde68a !important;
 	stroke: #f59e0b !important;
-	stroke-width: 1.5px !important;
+	stroke-width: 1.2px !important;
 }
 
 /* Glassmorphic Harita Tooltip'i */
