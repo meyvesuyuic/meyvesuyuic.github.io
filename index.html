@@ -69,6 +69,79 @@
 		</div>
 	</header>
 
+	<main id="appContent">
+		<!-- Setup / Onboarding Ekranı (İlk Defa Giriş Yapanlar İçin Zorunlu) -->
+		<div class="setup-container" id="setupScreen" style="display: none;">
+			<div class="setup-progress-wrapper">
+				<div class="setup-progress-bar" id="setupProgressBar" style="width: 50%;"></div>
+			</div>
+			<div class="setup-progress-text">Adım <span id="currentStepNum">1</span>/2</div>
+
+			<!-- ADIM 1 -->
+			<div id="step-1" class="setup-step active">
+				<h3>Bize biraz zevklerinden bahset</h3>
+				
+				<div class="form-group">
+					<label>Favori Bira Tarzların (En fazla 3 adet seçebilirsin)</label>
+					<div class="pill-group" id="beerStylesGroup">
+						<div class="pill-btn" data-value="Hafif & Ferahlatıcı (Lager/Pilsner)">Hafif & Ferahlatıcı</div>
+						<div class="pill-btn" data-value="Meyveli & Aromatik (IPA/Ale)">Meyveli & Aromatik</div>
+						<div class="pill-btn" data-value="Koyu & Kavruk (Stout/Porter)">Koyu & Kavruk</div>
+						<div class="pill-btn" data-value="Yumuşak & Buğday (Wheat)">Yumuşak & Buğday</div>
+						<div class="pill-btn" data-value="Ekşi & Alışılmışın Dışında (Sour)">Ekşi & Farklı</div>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label>Ne Sıklıkla Bira İçersin?</label>
+					<div class="pill-group" id="frequencyGroup">
+						<div class="pill-btn" data-value="Haftada birkaç">Haftada Birkaç</div>
+						<div class="pill-btn" data-value="Sadece hafta sonları">Sadece Hafta Sonları</div>
+						<div class="pill-btn" data-value="Ayda yılda bir">Ayda Yılda Bir</div>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label>En Sevdiğin İçim Ortamı Nedir?</label>
+					<div class="pill-group" id="environmentGroup">
+						<div class="pill-btn" data-value="Evde / Yalnız">Evde / Kendi Başıma</div>
+						<div class="pill-btn" data-value="Bar / Pub">Bar / Pub Ortamı</div>
+						<div class="pill-btn" data-value="Arkadaşlarla / Kalabalık">Arkadaşlarla / Kalabalık</div>
+						<div class="pill-btn" data-value="Açık Hava / Sahil">Açık Hava / Sahil</div>
+					</div>
+				</div>
+
+				<button id="nextBtnStep1" class="btn-main">Devam Et</button>
+			</div>
+
+			<!-- ADIM 2 -->
+			<div id="step-2" class="setup-step">
+				<h3>Son birkaç detay</h3>
+
+				<div class="form-group">
+					<label>Tercih Ettiğin Alkol Oranı (ABV)</label>
+					<div class="pill-group" id="abvGroup">
+						<div class="pill-btn" data-value="Hafif (%0 - %4)">Hafif (%0 - %4)</div>
+						<div class="pill-btn" data-value="Standart (%4 - %6)">Standart (%4 - %6)</div>
+						<div class="pill-btn" data-value="Sert (%6+)">Sert (%6+)</div>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label>Biranın Yanında En Çok Neyi Seversin?</label>
+					<div class="pill-group" id="snackGroup">
+						<div class="pill-btn" data-value="Tuzlu Fıstık / Cips">Çerez / Cips</div>
+						<div class="pill-btn" data-value="Patates Kızartması / Hamburger">Patates / Hamburger</div>
+						<div class="pill-btn" data-value="Yemek (Et/Pizza)">Güzel Bir Yemek</div>
+						<div class="pill-btn" data-value="Sadece bira">Hiçbir Şey / Sadece Bira</div>
+					</div>
+				</div>
+
+				<button id="saveProfileBtn" class="btn-main">Kurulumu Tamamla</button>
+			</div>
+		</div>
+	</main>
+
 	<script type="module" src="/js/app.js"></script>
 </body>
 

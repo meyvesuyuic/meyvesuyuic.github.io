@@ -1,3 +1,12 @@
+:root {
+	--bg-color: #ffffff;
+	--text-color: #1c1917;
+	--border-color: #e7e5e4;
+	--secondary-text: #78716c;
+	--accent-color: #f59e0b; /* Amber/beer color accent */
+	--input-bg: #ffffff;
+}
+
 /* SF Pro Font Tanımlamaları */
 @font-face {
 	font-family: 'SF Pro Display';
@@ -283,5 +292,156 @@ header {
 
 	.btn-logout {
 		padding: 6px;
+	}
+}
+
+/* Onboarding Setup Screen Styles (Cloned from Twitter Dating and adapted to Bira theme) */
+.setup-container {
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 40px 16px;
+	width: 100%;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	min-height: calc(100vh - 90px);
+}
+
+.setup-container h3 {
+	font-family: 'SF Pro Rounded', -apple-system, sans-serif;
+	font-size: 24px;
+	font-weight: 900;
+	margin-bottom: 24px;
+	color: var(--text-color);
+	letter-spacing: -0.5px;
+}
+
+.form-group {
+	margin-bottom: 24px;
+	display: flex;
+	flex-direction: column;
+}
+
+.form-group label {
+	font-size: 15px;
+	color: var(--secondary-text);
+	margin-bottom: 12px;
+	font-weight: 700;
+}
+
+.btn-main {
+	background-color: var(--accent-color);
+	color: white;
+	border: none;
+	padding: 16px;
+	border-radius: 9999px;
+	font-weight: 700;
+	font-size: 17px;
+	cursor: pointer;
+	width: 100%;
+	margin-top: 32px;
+	margin-bottom: 20px;
+	transition: background-color 0.2s, transform 0.1s;
+	display: block;
+	text-align: center;
+}
+
+.btn-main:active {
+	opacity: 0.9;
+	transform: scale(0.99);
+}
+
+.pill-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.pill-btn {
+	padding: 10px 18px;
+	border: 2px solid var(--border-color);
+	border-radius: 999px;
+	font-size: 14.5px;
+	font-weight: 500;
+	color: var(--text-color);
+	background: var(--bg-color);
+	cursor: pointer;
+	text-align: center;
+	transition: all 0.2s ease;
+	user-select: none;
+}
+
+.pill-btn:hover {
+	border-color: #cfd9de;
+}
+
+.pill-btn.selected {
+	background: rgba(245, 158, 11, 0.1); /* Amber light background */
+	border-color: var(--accent-color);
+	color: var(--accent-color);
+	font-weight: 700;
+}
+
+/* Progress Bar */
+.setup-progress-wrapper {
+	width: 100%;
+	height: 6px;
+	background: var(--border-color);
+	border-radius: 4px;
+	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+.setup-progress-bar {
+	height: 100%;
+	background: var(--accent-color);
+	border-radius: 4px;
+	transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.setup-progress-text {
+	font-size: 13px;
+	color: var(--secondary-text);
+	text-align: right;
+	margin-bottom: 24px;
+	font-weight: 700;
+}
+
+/* Step Animations */
+.setup-step {
+	display: none;
+}
+
+.setup-step.active {
+	display: block;
+	animation: setupFadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes setupFadeSlideUp {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Mobile responsive setup styles */
+@media (max-width: 600px) {
+	.setup-container {
+		padding: 24px 16px;
+		min-height: calc(100vh - 65px);
+	}
+
+	.setup-container h3 {
+		font-size: 20px;
+		margin-bottom: 20px;
+	}
+
+	.pill-btn {
+		padding: 8px 14px;
+		font-size: 13.5px;
 	}
 }

@@ -49,6 +49,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		if (!session) {
 			loginBtn.style.display = 'flex';
 			userContainer.style.display = 'none';
+			document.getElementById('setupScreen').style.display = 'none';
 			return;
 		}
 
@@ -59,49 +60,209 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		if (cachedProfile) {
 			try {
 				const profileData = JSON.parse(cachedProfile);
-				console.log("Kullanıcı bilgileri lokal depolamadan yüklendi, DB sorgusu atlanıyor:", profileData);
-				// Arayüzü güncelle
-				userName.innerText = profileData.display_name;
-				userAvatar.src = profileData.avatar_url;
-				loginBtn.style.display = 'none';
-				userContainer.style.display = 'flex';
-				return;
+				if (profileData.is_onboarded) {
+					console.log("Kullanıcı bilgileri lokal depolamadan yüklendi (Onboarded), DB sorgusu atlanıyor:", profileData);
+					userName.innerText = profileData.display_name;
+					userAvatar.src = profileData.avatar_url;
+					loginBtn.style.display = 'none';
+					userContainer.style.display = 'flex';
+					document.getElementById('setupScreen').style.display = 'none';
+					return;
+				}
 			} catch (e) {
-				console.error("Lokal profil verisi parse edilemedi, DB'ye sorgu atılacak.", e);
+				console.error("Lokal profil verisi parse edilemedi.", e);
 			}
 		}
 
-		const metadata = user.user_metadata;
+		// Supabase'den güncel profil durumunu çekelim
+		const { data: dbProfile, error: dbError } = await supabase
+			.from('profiles')
+			.select('is_onboarded, display_name, nickname, avatar_url')
+			.eq('id', user.id)
+			.maybeSingle();
 
-		// 400x400 piksellik optimize kalite
-		let betterAvatar = metadata.avatar_url ? metadata.avatar_url.replace('_normal', '_400x400') : '';
+		if (dbProfile && dbProfile.is_onboarded) {
+			console.log("Kullanıcı onboard edilmiş, bilgiler yerel depolamaya yazılıyor.");
+			const localData = {
+				display_name: dbProfile.display_name,
+				nickname: dbProfile.nickname,
+				avatar_url: dbProfile.avatar_url,
+				is_onboarded: true
+			};
+			localStorage.setItem(localKey, JSON.stringify(localData));
 
-		const twitterData = {
-			id: user.id,
-			twitter_id: metadata.provider_id || metadata.sub,
-			nickname: metadata.preferred_username || metadata.user_name,
-			display_name: metadata.name || metadata.full_name,
-			avatar_url: betterAvatar,
+			userName.innerText = dbProfile.display_name;
+			userAvatar.src = dbProfile.avatar_url;
+			loginBtn.style.display = 'none';
+			userContainer.style.display = 'flex';
+			document.getElementById('setupScreen').style.display = 'none';
+		} else {
+			// Onboard edilmemiş veya kaydı yok!
+			console.log("Kullanıcı kurulum ekranını tamamlamamış. Setup ekranı açılıyor.");
+			loginBtn.style.display = 'none';
+			userContainer.style.display = 'none';
+			document.getElementById('setupScreen').style.display = 'flex';
+
+			const metadata = user.user_metadata;
+			let betterAvatar = metadata.avatar_url ? metadata.avatar_url.replace('_normal', '_400x400') : '';
+			const twitterData = {
+				id: user.id,
+				twitter_id: metadata.provider_id || metadata.sub,
+				nickname: metadata.preferred_username || metadata.user_name,
+				display_name: metadata.name || metadata.full_name,
+				avatar_url: betterAvatar,
+				is_onboarded: false,
+				updated_at: new Date().toISOString()
+			};
+
+			if (!dbProfile) {
+				// İlk defa geliyorsa profili default değerlerle oluşturalım
+				await supabase.from('profiles').upsert(twitterData, { onConflict: 'id' });
+			}
+
+			// Setup sihirbazını başlatıyoruz
+			initSetupLogic(user, twitterData);
+		}
+	} else if (event === 'SIGNED_OUT') {
+		loginBtn.style.display = 'flex';
+		userContainer.style.display = 'none';
+		document.getElementById('setupScreen').style.display = 'none';
+		userName.innerText = '';
+		userAvatar.src = '';
+	}
+});
+
+// Setup mantığını yöneten sihirbaz fonksiyonu
+function initSetupLogic(user, twitterData) {
+	let selectedBeerStyles = [];
+
+	const step1 = document.getElementById('step-1');
+	const step2 = document.getElementById('step-2');
+	const nextBtnStep1 = document.getElementById('nextBtnStep1');
+	const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+	// Tekli seçim değerini al
+	function getPillValue(groupId) {
+		const selected = document.querySelector(`#${groupId} .pill-btn.selected`);
+		return selected ? selected.getAttribute('data-value') : null;
+	}
+
+	// Pill grubu tıklamalarını yönet
+	function initPillGroup(groupId, isMultiSelect = false) {
+		const group = document.getElementById(groupId);
+		if (!group) return;
+
+		const pills = group.querySelectorAll('.pill-btn');
+		pills.forEach(pill => {
+			// Mevcut olay dinleyicilerini sıfırlamak için butonu kopyalıyoruz
+			const newPill = pill.cloneNode(true);
+			pill.parentNode.replaceChild(newPill, pill);
+
+			newPill.addEventListener('click', () => {
+				const val = newPill.getAttribute('data-value');
+				if (isMultiSelect) {
+					if (newPill.classList.contains('selected')) {
+						newPill.classList.remove('selected');
+						selectedBeerStyles = selectedBeerStyles.filter(s => s !== val);
+					} else {
+						if (selectedBeerStyles.length >= 3) {
+							alert("En fazla 3 bira tarzı seçebilirsiniz.");
+							return;
+						}
+						newPill.classList.add('selected');
+						selectedBeerStyles.push(val);
+					}
+				} else {
+					const groupPills = group.querySelectorAll('.pill-btn');
+					groupPills.forEach(p => p.classList.remove('selected'));
+					newPill.classList.add('selected');
+				}
+			});
+		});
+	}
+
+	// Tüm seçim gruplarını başlat
+	initPillGroup('beerStylesGroup', true);
+	initPillGroup('frequencyGroup', false);
+	initPillGroup('environmentGroup', false);
+	initPillGroup('abvGroup', false);
+	initPillGroup('snackGroup', false);
+
+	// İlerleme çubuğunu güncelle
+	function updateProgress(step) {
+		const bar = document.getElementById('setupProgressBar');
+		const text = document.getElementById('currentStepNum');
+		if (bar) bar.style.width = (step === 1 ? '50%' : '100%');
+		if (text) text.innerText = step;
+	}
+
+	updateProgress(1);
+
+	// Adım 1 Doğrulama ve Geçiş
+	nextBtnStep1.onclick = () => {
+		if (selectedBeerStyles.length === 0) {
+			alert("Lütfen en az 1 favori bira tarzı seçiniz.");
+			return;
+		}
+		const frequency = getPillValue('frequencyGroup');
+		if (!frequency) {
+			alert("Lütfen bira içme sıklığınızı seçiniz.");
+			return;
+		}
+		const environment = getPillValue('environmentGroup');
+		if (!environment) {
+			alert("Lütfen tercih ettiğiniz içim ortamını seçiniz.");
+			return;
+		}
+
+		// Adım 2'ye geçiş yap
+		step1.classList.remove('active');
+		step2.classList.add('active');
+		updateProgress(2);
+		window.scrollTo(0, 0);
+	};
+
+	// Adım 2 Doğrulama ve Kaydetme
+	saveProfileBtn.onclick = async () => {
+		const abv = getPillValue('abvGroup');
+		if (!abv) {
+			alert("Lütfen tercih ettiğiniz alkol oranını (ABV) seçiniz.");
+			return;
+		}
+		const snack = getPillValue('snackGroup');
+		if (!snack) {
+			alert("Lütfen biranın yanındaki atıştırmalık tercihinizi seçiniz.");
+			return;
+		}
+
+		// Supabase profiles tablosunu güncelle
+		const updateData = {
+			is_onboarded: true,
+			favorite_styles: selectedBeerStyles,
+			drinking_frequency: getPillValue('frequencyGroup'),
+			drinking_environment: getPillValue('environmentGroup'),
+			abv_preference: abv,
+			drinking_snack: snack,
 			updated_at: new Date().toISOString()
 		};
 
-		console.log("Supabase'e gönderilen veri:", twitterData);
-
-		// Veriyi public.profiles tablosuna upsert ediyoruz
 		const { error } = await supabase
 			.from('profiles')
-			.upsert(twitterData, { onConflict: 'id' });
+			.update(updateData)
+			.eq('id', user.id);
 
 		if (error) {
-			console.error("Tabloya yazma başarısız. Hata kodu:", error.code, "Detay:", error.message);
+			alert("Profil kurulumu tamamlanırken bir hata oluştu: " + error.message);
 		} else {
-			console.log("Kullanıcı başarıyla tabloya eklendi/güncellendi.");
-			
-			// Bilgileri yerel depolamaya (localStorage) kaydediyoruz
+			console.log("Kurulum başarıyla tamamlandı.");
+
+			// Yerel önbelleğe kaydet
+			const localKey = `user_profile_${user.id}`;
 			const localData = {
 				display_name: twitterData.display_name,
 				nickname: twitterData.nickname,
-				avatar_url: twitterData.avatar_url
+				avatar_url: twitterData.avatar_url,
+				is_onboarded: true
 			};
 			localStorage.setItem(localKey, JSON.stringify(localData));
 
@@ -110,14 +271,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			userAvatar.src = twitterData.avatar_url;
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
+			document.getElementById('setupScreen').style.display = 'none';
 		}
-	} else if (event === 'SIGNED_OUT') {
-		loginBtn.style.display = 'flex';
-		userContainer.style.display = 'none';
-		userName.innerText = '';
-		userAvatar.src = '';
-	}
-});
+	};
+}
 
 // Fire Effect Particles Generation
 document.addEventListener('DOMContentLoaded', () => {
