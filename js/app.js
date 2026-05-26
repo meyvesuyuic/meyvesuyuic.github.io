@@ -100,7 +100,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			// Onboard edilmemiş veya kaydı yok!
 			console.log("Kullanıcı kurulum ekranını tamamlamamış. Setup ekranı açılıyor.");
 			loginBtn.style.display = 'none';
-			userContainer.style.display = 'none';
+			userContainer.style.display = 'flex'; // Profil bilgilerinin görünmesi için
 			document.getElementById('setupScreen').style.display = 'flex';
 
 			const metadata = user.user_metadata;
@@ -114,6 +114,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 				is_onboarded: false,
 				updated_at: new Date().toISOString()
 			};
+
+			// Profil bilgilerini hemen arayüze bas
+			userName.innerText = twitterData.display_name;
+			userAvatar.src = twitterData.avatar_url;
 
 			if (!dbProfile) {
 				// İlk defa geliyorsa profili default değerlerle oluşturalım
@@ -135,11 +139,104 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 // Setup mantığını yöneten sihirbaz fonksiyonu
 function initSetupLogic(user, twitterData) {
 	let selectedBeerStyles = [];
+	let selectedOtherAlcohols = [];
+	let selectedLocations = [];
+
+	const districtsMap = {
+		"İstanbul": ["Kadıköy", "Beşiktaş", "Şişli", "Beyoğlu", "Üsküdar", "Bakırköy", "Sarıyer", "Ataşehir", "Fatih", "Kartal", "Maltepe"],
+		"Ankara": ["Çankaya", "Yenimahalle", "Keçiören", "Etimesgut", "Mamak", "Altındağ"],
+		"İzmir": ["Konak (Alsancak)", "Karşıyaka", "Bornova", "Buca", "Çeşme", "Urla", "Foça"],
+		"Bursa": ["Nilüfer", "Osmangazi", "Yıldırım", "Mudanya"],
+		"Antalya": ["Muratpaşa", "Konyaaltı", "Kepez", "Alanya", "Kaş", "Kemer"],
+		"Eskişehir": ["Tepebaşı", "Odunpazarı"],
+		"Muğla": ["Bodrum", "Marmaris", "Fethiye", "Datça", "Akyaka", "Menteşe"]
+	};
 
 	const step1 = document.getElementById('step-1');
 	const step2 = document.getElementById('step-2');
 	const nextBtnStep1 = document.getElementById('nextBtnStep1');
 	const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+	// Konum Seçim DOM Elemanları
+	const citySelect = document.getElementById('citySelect');
+	const districtSelect = document.getElementById('districtSelect');
+	const addLocationBtn = document.getElementById('addLocationBtn');
+	const selectedLocationsGroup = document.getElementById('selectedLocationsGroup');
+
+	// Şehir seçildiğinde ilçeleri doldur
+	if (citySelect && districtSelect) {
+		citySelect.addEventListener('change', () => {
+			const city = citySelect.value;
+			districtSelect.innerHTML = '<option value="" disabled selected>İlçe Seçin</option>';
+			
+			if (districtsMap[city]) {
+				districtsMap[city].forEach(district => {
+					const opt = document.createElement('option');
+					opt.value = district;
+					opt.innerText = district;
+					districtSelect.appendChild(opt);
+				});
+				districtSelect.disabled = false;
+			} else {
+				districtSelect.disabled = true;
+			}
+		});
+	}
+
+	// Konum ekleme butonu tetikleyicisi
+	if (addLocationBtn) {
+		addLocationBtn.addEventListener('click', () => {
+			const city = citySelect ? citySelect.value : '';
+			const district = districtSelect ? districtSelect.value : '';
+			
+			if (!city || !district) {
+				alert("Lütfen önce şehir ve ilçe seçiniz.");
+				return;
+			}
+			
+			const locStr = `${city}, ${district}`;
+			if (selectedLocations.includes(locStr)) {
+				alert("Bu konum zaten eklenmiş.");
+				return;
+			}
+			
+			if (selectedLocations.length >= 3) {
+				alert("En fazla 3 adet konum ekleyebilirsiniz.");
+				return;
+			}
+			
+			selectedLocations.push(locStr);
+			renderLocations();
+			
+			// İlçe seçimini sıfırla
+			if (districtSelect) {
+				districtSelect.value = '';
+			}
+		});
+	}
+
+	// Seçilen konumları ekrana çizdir
+	function renderLocations() {
+		if (!selectedLocationsGroup) return;
+		selectedLocationsGroup.innerHTML = '';
+		
+		selectedLocations.forEach((loc, index) => {
+			const pill = document.createElement('div');
+			pill.className = 'location-pill';
+			pill.innerHTML = `
+				<span>${loc}</span>
+				<button type="button" class="location-pill-delete" data-index="${index}">&times;</button>
+			`;
+			
+			pill.querySelector('.location-pill-delete').addEventListener('click', (e) => {
+				const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+				selectedLocations.splice(idx, 1);
+				renderLocations();
+			});
+			
+			selectedLocationsGroup.appendChild(pill);
+		});
+	}
 
 	// Tekli seçim değerini al
 	function getPillValue(groupId) {
@@ -163,10 +260,18 @@ function initSetupLogic(user, twitterData) {
 				if (isMultiSelect) {
 					if (newPill.classList.contains('selected')) {
 						newPill.classList.remove('selected');
-						selectedBeerStyles = selectedBeerStyles.filter(s => s !== val);
+						if (groupId === 'beerStylesGroup') {
+							selectedBeerStyles = selectedBeerStyles.filter(s => s !== val);
+						} else if (groupId === 'otherAlcoholsGroup') {
+							selectedOtherAlcohols = selectedOtherAlcohols.filter(s => s !== val);
+						}
 					} else {
 						newPill.classList.add('selected');
-						selectedBeerStyles.push(val);
+						if (groupId === 'beerStylesGroup') {
+							selectedBeerStyles.push(val);
+						} else if (groupId === 'otherAlcoholsGroup') {
+							selectedOtherAlcohols.push(val);
+						}
 					}
 				} else {
 					const groupPills = group.querySelectorAll('.pill-btn');
@@ -179,6 +284,7 @@ function initSetupLogic(user, twitterData) {
 
 	// Tüm seçim gruplarını başlat
 	initPillGroup('beerStylesGroup', true);
+	initPillGroup('otherAlcoholsGroup', true);
 	initPillGroup('frequencyGroup', false);
 	initPillGroup('environmentGroup', false);
 	initPillGroup('abvGroup', false);
@@ -194,18 +300,21 @@ function initSetupLogic(user, twitterData) {
 
 	// Adım 1 Doğrulama ve Geçiş
 	nextBtnStep1.onclick = () => {
+		if (selectedLocations.length === 0) {
+			alert("Lütfen en az 1 tercih edilen konum ekleyiniz.");
+			return;
+		}
 		if (selectedBeerStyles.length === 0) {
 			alert("Lütfen en az 1 favori bira tarzı seçiniz.");
+			return;
+		}
+		if (selectedOtherAlcohols.length === 0) {
+			alert("Lütfen diğer alkol tercihlerinizi seçiniz.");
 			return;
 		}
 		const frequency = getPillValue('frequencyGroup');
 		if (!frequency) {
 			alert("Lütfen bira içme sıklığınızı seçiniz.");
-			return;
-		}
-		const environment = getPillValue('environmentGroup');
-		if (!environment) {
-			alert("Lütfen tercih ettiğiniz içim ortamını seçiniz.");
 			return;
 		}
 
@@ -218,6 +327,11 @@ function initSetupLogic(user, twitterData) {
 
 	// Adım 2 Doğrulama ve Kaydetme
 	saveProfileBtn.onclick = async () => {
+		const environment = getPillValue('environmentGroup');
+		if (!environment) {
+			alert("Lütfen tercih ettiğiniz içim ortamını seçiniz.");
+			return;
+		}
 		const abv = getPillValue('abvGroup');
 		if (!abv) {
 			alert("Lütfen tercih ettiğiniz alkol oranını (ABV) seçiniz.");
@@ -233,8 +347,10 @@ function initSetupLogic(user, twitterData) {
 		const updateData = {
 			is_onboarded: true,
 			favorite_styles: selectedBeerStyles,
+			other_alcohols: selectedOtherAlcohols,
+			preferred_locations: selectedLocations,
 			drinking_frequency: getPillValue('frequencyGroup'),
-			drinking_environment: getPillValue('environmentGroup'),
+			drinking_environment: environment,
 			abv_preference: abv,
 			drinking_snack: snack,
 			updated_at: new Date().toISOString()

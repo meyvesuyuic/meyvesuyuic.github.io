@@ -30,14 +30,16 @@
 						try { profile = JSON.parse(cachedProfile); } catch(e){}
 					}
 					
-					if (profile && profile.is_onboarded) {
-						// Profil onaylıysa direkt profil alanını göster
+					if (profile) {
+						// Profil önbellekte varsa profil alanını göster
 						document.documentElement.classList.add('preload-profile-ready');
 						document.addEventListener('DOMContentLoaded', () => {
 							document.getElementById('userName').innerText = profile.display_name;
 							document.getElementById('userAvatar').src = profile.avatar_url;
 						});
-					} else {
+					}
+					
+					if (!profile || !profile.is_onboarded) {
 						// Profil onaylı değilse onboarding ekranını göster
 						document.documentElement.classList.add('preload-needs-onboarding');
 					}
@@ -91,6 +93,29 @@
 				<h3>Bize biraz zevklerinden bahset</h3>
 				
 				<div class="form-group">
+					<label>Yaşadığın / Bira İçmeyi Sevdiğin Konumlar (En fazla 3 adet ekleyebilirsin)</label>
+					<div class="location-picker-wrapper">
+						<select id="citySelect" class="form-select">
+							<option value="" disabled selected>Şehir Seçin</option>
+							<option value="İstanbul">İstanbul</option>
+							<option value="Ankara">Ankara</option>
+							<option value="İzmir">İzmir</option>
+							<option value="Bursa">Bursa</option>
+							<option value="Antalya">Antalya</option>
+							<option value="Eskişehir">Eskişehir</option>
+							<option value="Muğla">Muğla</option>
+						</select>
+						<select id="districtSelect" class="form-select" disabled>
+							<option value="" disabled selected>İlçe Seçin</option>
+						</select>
+						<button id="addLocationBtn" class="btn-secondary" type="button">Ekle</button>
+					</div>
+					<div class="selected-locations-group" id="selectedLocationsGroup">
+						<!-- Konum pill'leri JavaScript ile buraya eklenecektir -->
+					</div>
+				</div>
+
+				<div class="form-group">
 					<label>Favori Bira Tarzların</label>
 					<div class="pill-group" id="beerStylesGroup">
 						<div class="pill-btn" data-value="Hafif & Ferahlatıcı (Lager/Pilsner)">Hafif & Ferahlatıcı</div>
@@ -98,6 +123,20 @@
 						<div class="pill-btn" data-value="Koyu & Kavruk (Stout/Porter)">Koyu & Kavruk</div>
 						<div class="pill-btn" data-value="Yumuşak & Buğday (Wheat)">Yumuşak & Buğday</div>
 						<div class="pill-btn" data-value="Ekşi & Alışılmışın Dışında (Sour)">Ekşi & Farklı</div>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label>Tükettiğin Diğer Alkoller (İstediğin kadar seçebilirsin)</label>
+					<div class="pill-group" id="otherAlcoholsGroup">
+						<div class="pill-btn" data-value="Rakı">Rakı</div>
+						<div class="pill-btn" data-value="Şarap">Şarap</div>
+						<div class="pill-btn" data-value="Viski">Viski</div>
+						<div class="pill-btn" data-value="Cin">Cin</div>
+						<div class="pill-btn" data-value="Votka">Votka</div>
+						<div class="pill-btn" data-value="Tekila">Tekila</div>
+						<div class="pill-btn" data-value="Kokteyl">Kokteyl</div>
+						<div class="pill-btn" data-value="İçmiyorum">Başka Alkol Tüketmiyorum</div>
 					</div>
 				</div>
 
@@ -112,6 +151,13 @@
 					</div>
 				</div>
 
+				<button id="nextBtnStep1" class="btn-main">Devam Et</button>
+			</div>
+
+			<!-- ADIM 2 -->
+			<div id="step-2" class="setup-step">
+				<h3>Son birkaç detay</h3>
+
 				<div class="form-group">
 					<label>En Sevdiğin İçim Ortamı Nedir?</label>
 					<div class="pill-group" id="environmentGroup">
@@ -121,13 +167,6 @@
 						<div class="pill-btn" data-value="Açık Hava / Sahil">Açık Hava / Sahil</div>
 					</div>
 				</div>
-
-				<button id="nextBtnStep1" class="btn-main">Devam Et</button>
-			</div>
-
-			<!-- ADIM 2 -->
-			<div id="step-2" class="setup-step">
-				<h3>Son birkaç detay</h3>
 
 				<div class="form-group">
 					<label>Tercih Ettiğin Alkol Oranı (ABV)</label>

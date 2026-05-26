@@ -426,6 +426,100 @@ header {
 	}
 }
 
+/* Location Picker and Select Styles */
+.location-picker-wrapper {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.form-select {
+	flex: 1;
+	padding: 10px 18px;
+	border: 2px solid var(--border-color);
+	border-radius: 999px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--text-color);
+	background-color: var(--bg-color);
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.2s ease;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 14px center;
+	background-size: 14px;
+	padding-right: 36px;
+}
+
+.form-select:disabled {
+	background-color: #f5f5f4;
+	color: #a8a29e;
+	cursor: not-allowed;
+}
+
+.form-select:focus:not(:disabled) {
+	border-color: var(--accent-color);
+}
+
+.btn-secondary {
+	background-color: #1c1917;
+	color: #ffffff;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 999px;
+	font-weight: 700;
+	font-size: 14px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+	background-color: #33302e;
+}
+
+.selected-locations-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.location-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	background-color: #f5f5f4;
+	border: 1px solid var(--border-color);
+	border-radius: 999px;
+	font-size: 13.5px;
+	font-weight: 500;
+	color: var(--text-color);
+	transition: all 0.2s ease;
+}
+
+.location-pill-delete {
+	background: none;
+	border: none;
+	color: #a8a29e;
+	font-size: 16px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	line-height: 1;
+	transition: color 0.1s ease;
+}
+
+.location-pill-delete:hover {
+	color: #ef4444;
+}
+
 /* Mobile responsive setup styles */
 @media (max-width: 600px) {
 	.setup-container {
@@ -437,6 +531,16 @@ header {
 		font-size: 20px;
 		margin-top: 8px;
 		margin-bottom: 12px;
+	}
+
+	.location-picker-wrapper {
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.btn-secondary {
+		width: 100%;
+		padding: 10px;
 	}
 
 	.pill-btn {
