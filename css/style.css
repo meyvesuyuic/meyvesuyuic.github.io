@@ -1010,7 +1010,7 @@ header {
 
 .map-header {
 	text-align: center;
-	margin-bottom: 24px;
+	margin-bottom: 20px;
 }
 
 .map-header h1 {
@@ -1020,6 +1020,28 @@ header {
 	letter-spacing: -1px;
 	color: #1c1917;
 	margin-bottom: 0;
+}
+
+/* Özel Yatay Kaydırma Göstergesi (Üstte) */
+.map-scroll-track {
+	width: 80px;
+	height: 4px;
+	background: #e7e5e4;
+	border-radius: 2px;
+	margin: 0 auto 20px auto;
+	position: relative;
+	display: block;
+}
+
+.map-scroll-thumb {
+	width: 30px;
+	height: 100%;
+	background: var(--accent-color);
+	border-radius: 2px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	transition: left 0.05s ease-out;
 }
 
 .map-wrapper {
@@ -1043,12 +1065,13 @@ header {
 
 .map-container {
 	position: relative;
-	width: 1500px; /* Büyütülmüş harita genişliği */
-	height: 731px; /* 1500 * (490/1005) aspect ratio */
+	width: 1200px; /* Bir tık küçültülmüş taban harita genişliği */
+	height: 585px; /* 1200 * (490/1005) aspect ratio */
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	flex-shrink: 0;
+	transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .map-container svg {
@@ -1057,11 +1080,11 @@ header {
 	display: block;
 }
 
-/* SVG Şehir Path Stilleri (Açık ve Temiz Tema) */
+/* SVG Şehir Path Stilleri (Soluk ve İnce Çizgili Tema) */
 .turkey g path {
-	fill: #f5f5f4;
-	stroke: #ffffff;
-	stroke-width: 1.5px;
+	fill: #fafaf9; /* Soluk ve temiz arka plan */
+	stroke: #e7e5e4; /* İnce ve yumuşak gri sınırlar */
+	stroke-width: 0.8px; /* İnceltilmiş sınırlar */
 	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: pointer;
 }
@@ -1070,15 +1093,15 @@ header {
 .turkey g.active-city path {
 	fill: #fef3c7;
 	stroke: #fde68a;
-	stroke-width: 1.8px;
+	stroke-width: 1px;
 }
 
 /* Şehir Üzerine Gelme Efekti */
 .turkey g:hover path {
 	fill: #fde68a !important;
 	stroke: #f59e0b !important;
-	stroke-width: 2.2px !important;
-	filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.15));
+	stroke-width: 1.5px !important;
+	filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.1));
 }
 
 /* Glassmorphic Harita Tooltip'i */
@@ -1107,26 +1130,45 @@ header {
 	opacity: 1;
 }
 
-/* Özel Yatay Kaydırma Göstergesi */
-.map-scroll-track {
-	width: 80px;
-	height: 4px;
-	background: #e7e5e4;
-	border-radius: 2px;
-	margin: 24px auto 0 auto;
-	position: relative;
-	display: block;
+/* Harita Yakınlaştırma Kontrolleri */
+.map-zoom-controls {
+	position: absolute;
+	bottom: 16px;
+	right: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	z-index: 80;
 }
 
-.map-scroll-thumb {
-	width: 30px;
-	height: 100%;
-	background: var(--accent-color);
-	border-radius: 2px;
-	position: absolute;
-	left: 0;
-	top: 0;
-	transition: left 0.05s ease-out;
+.btn-zoom {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: rgba(255, 255, 255, 0.85);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border: 1px solid #e7e5e4;
+	color: #1c1917;
+	font-size: 18px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease;
+	user-select: none;
+}
+
+.btn-zoom:hover {
+	background: #ffffff;
+	border-color: #cfd9de;
+	transform: scale(1.05);
+}
+
+.btn-zoom:active {
+	transform: scale(0.95);
 }
 
 /* Snapchat Tarzı Dairesel Avatar Kabarcıkları */
@@ -1143,8 +1185,8 @@ header {
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
-	border: none; /* Border kaldırıldı */
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Temiz gölge efekti */
+	border: none;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 	background-color: #e7e5e4;
 	cursor: pointer;
 	pointer-events: auto;
@@ -1162,11 +1204,10 @@ header {
 	display: block;
 }
 
-/* Avatar Üzerine Gelme Hareketi */
 .map-avatar-bubble:hover {
 	transform: translate(-50%, -50%) scale(1.2) !important;
 	z-index: 50;
-	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Hover gölge */
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Mobil Ekran Boyutu Uyumlaştırması */
@@ -1180,19 +1221,19 @@ header {
 	}
 
 	.turkey g path {
-		stroke-width: 1px;
+		stroke-width: 0.5px;
 	}
 
 	.turkey g.active-city path {
-		stroke-width: 1.2px;
+		stroke-width: 0.7px;
 	}
 
 	.turkey g:hover path {
-		stroke-width: 1.5px !important;
+		stroke-width: 1px !important;
 	}
 
 	.map-avatar-bubble {
-		width: 32px; /* Mobilde biraz daha dengeli boyut */
+		width: 32px;
 		height: 32px;
 		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 	}

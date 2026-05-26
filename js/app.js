@@ -772,10 +772,62 @@ async function loadBiraMap() {
 
 		mapWrapper.onscroll = () => {
 			const maxScroll = mapWrapper.scrollWidth - mapWrapper.clientWidth;
-			if (maxScroll <= 0) return;
+			if (maxScroll <= 0) {
+				mapScrollThumb.style.left = '0px';
+				return;
+			}
 			const scrollRatio = mapWrapper.scrollLeft / maxScroll;
 			const maxThumbLeft = 50; // 80px track - 30px thumb
 			mapScrollThumb.style.left = `${scrollRatio * maxThumbLeft}px`;
+		};
+	}
+
+	// 6. Harita Yakınlaştırma / Uzaklaştırma (Zoom) Kontrolü
+	const zoomInBtn = document.getElementById('zoomInBtn');
+	const zoomOutBtn = document.getElementById('zoomOutBtn');
+	let zoomLevel = 1.0;
+	const minZoom = 0.8;
+	const maxZoom = 2.0;
+	const zoomStep = 0.2;
+
+	function updateMapZoom() {
+		const baseWidth = 1200;
+		const newWidth = baseWidth * zoomLevel;
+		const newHeight = newWidth * (490 / 1005);
+		
+		mapContainer.style.width = `${newWidth}px`;
+		mapContainer.style.height = `${newHeight}px`;
+
+		setTimeout(() => {
+			if (mapWrapper) {
+				const maxScroll = mapWrapper.scrollWidth - mapWrapper.clientWidth;
+				if (maxScroll <= 0) {
+					mapScrollThumb.style.left = '0px';
+					return;
+				}
+				const scrollRatio = mapWrapper.scrollLeft / maxScroll;
+				const maxThumbLeft = 50;
+				mapScrollThumb.style.left = `${scrollRatio * maxThumbLeft}px`;
+			}
+		}, 320); // 0.3s transition + 20ms buffer
+	}
+
+	if (zoomInBtn && zoomOutBtn) {
+		zoomInBtn.onclick = null;
+		zoomOutBtn.onclick = null;
+
+		zoomInBtn.onclick = () => {
+			if (zoomLevel < maxZoom) {
+				zoomLevel = parseFloat((zoomLevel + zoomStep).toFixed(1));
+				updateMapZoom();
+			}
+		};
+
+		zoomOutBtn.onclick = () => {
+			if (zoomLevel > minZoom) {
+				zoomLevel = parseFloat((zoomLevel - zoomStep).toFixed(1));
+				updateMapZoom();
+			}
 		};
 	}
 }
