@@ -763,6 +763,21 @@ async function loadBiraMap() {
 
 		mapContainer.appendChild(cityGroupDiv);
 	});
+
+	// 5. Özel yatay kaydırma göstergesi senkronizasyonu
+	const mapScrollThumb = document.getElementById('mapScrollThumb');
+	if (mapWrapper && mapScrollThumb) {
+		mapWrapper.scrollLeft = 0;
+		mapScrollThumb.style.left = '0px';
+
+		mapWrapper.onscroll = () => {
+			const maxScroll = mapWrapper.scrollWidth - mapWrapper.clientWidth;
+			if (maxScroll <= 0) return;
+			const scrollRatio = mapWrapper.scrollLeft / maxScroll;
+			const maxThumbLeft = 50; // 80px track - 30px thumb
+			mapScrollThumb.style.left = `${scrollRatio * maxThumbLeft}px`;
+		};
+	}
 }
 
 // Fire Effect Particles Generation

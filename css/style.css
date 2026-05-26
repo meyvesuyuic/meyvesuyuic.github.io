@@ -997,9 +997,9 @@ header {
 
 /* Bira Severler Haritası (Snapchat Map) Stilleri */
 .map-view {
-	max-width: 1000px;
+	max-width: 100%;
 	margin: 0 auto;
-	padding: 32px 16px;
+	padding: 24px 0;
 	width: 100%;
 	display: flex;
 	flex-direction: column;
@@ -1010,7 +1010,7 @@ header {
 
 .map-header {
 	text-align: center;
-	margin-bottom: 32px;
+	margin-bottom: 24px;
 }
 
 .map-header h1 {
@@ -1019,40 +1019,41 @@ header {
 	font-weight: 900;
 	letter-spacing: -1px;
 	color: #1c1917;
-	margin-bottom: 8px;
-}
-
-.map-header p {
-	color: #78716c;
-	font-size: 1rem;
-	font-weight: 500;
+	margin-bottom: 0;
 }
 
 .map-wrapper {
 	position: relative;
 	width: 100%;
 	background: #ffffff;
-	border: 1px solid #e7e5e4;
-	border-radius: 24px;
-	padding: 24px;
-	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+	border: none;
+	border-radius: 0;
+	padding: 0;
+	box-shadow: none;
 	box-sizing: border-box;
-	overflow: hidden;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE/Edge */
+}
+
+.map-wrapper::-webkit-scrollbar {
+	display: none; /* Chrome/Safari */
 }
 
 .map-container {
 	position: relative;
-	width: 100%;
-	height: auto;
+	width: 1500px; /* Büyütülmüş harita genişliği */
+	height: 731px; /* 1500 * (490/1005) aspect ratio */
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	flex-shrink: 0;
 }
 
 .map-container svg {
 	width: 100%;
-	height: auto;
-	max-height: 70vh;
+	height: 100%;
 	display: block;
 }
 
@@ -1068,7 +1069,7 @@ header {
 /* Kullanıcı Bulunan Şehir (Aktif Şehir) */
 .turkey g.active-city path {
 	fill: #fef3c7;
-	stroke: #fbcfe8;
+	stroke: #fde68a;
 	stroke-width: 1.8px;
 }
 
@@ -1106,6 +1107,28 @@ header {
 	opacity: 1;
 }
 
+/* Özel Yatay Kaydırma Göstergesi */
+.map-scroll-track {
+	width: 80px;
+	height: 4px;
+	background: #e7e5e4;
+	border-radius: 2px;
+	margin: 24px auto 0 auto;
+	position: relative;
+	display: block;
+}
+
+.map-scroll-thumb {
+	width: 30px;
+	height: 100%;
+	background: var(--accent-color);
+	border-radius: 2px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	transition: left 0.05s ease-out;
+}
+
 /* Snapchat Tarzı Dairesel Avatar Kabarcıkları */
 .map-city-group {
 	position: absolute;
@@ -1120,8 +1143,8 @@ header {
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
-	border: 2px solid #ffffff;
-	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25), 0 0 0 2px #f59e0b;
+	border: none; /* Border kaldırıldı */
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Temiz gölge efekti */
 	background-color: #e7e5e4;
 	cursor: pointer;
 	pointer-events: auto;
@@ -1139,34 +1162,21 @@ header {
 	display: block;
 }
 
-/* Avatar Üzerine Gelme Büyüme Hareketi */
+/* Avatar Üzerine Gelme Hareketi */
 .map-avatar-bubble:hover {
 	transform: translate(-50%, -50%) scale(1.2) !important;
 	z-index: 50;
-	box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4), 0 0 0 2.5px #f59e0b;
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Hover gölge */
 }
 
 /* Mobil Ekran Boyutu Uyumlaştırması */
 @media (max-width: 600px) {
 	.map-view {
-		padding: 16px 8px;
-	}
-
-	.map-header {
-		margin-bottom: 20px;
+		padding: 16px 0;
 	}
 
 	.map-header h1 {
 		font-size: 1.75rem;
-	}
-
-	.map-header p {
-		font-size: 0.85rem;
-	}
-
-	.map-wrapper {
-		border-radius: 16px;
-		padding: 12px;
 	}
 
 	.turkey g path {
@@ -1182,13 +1192,12 @@ header {
 	}
 
 	.map-avatar-bubble {
-		width: 30px;
-		height: 30px;
-		border-width: 1.5px;
-		box-shadow: 0 3px 8px rgba(245, 158, 11, 0.2), 0 0 0 1.5px #f59e0b;
+		width: 32px; /* Mobilde biraz daha dengeli boyut */
+		height: 32px;
+		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 	}
 
 	.map-avatar-bubble:hover {
-		box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35), 0 0 0 2px #f59e0b;
+		box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 	}
 }
