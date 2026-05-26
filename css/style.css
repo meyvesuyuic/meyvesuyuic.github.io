@@ -49,15 +49,20 @@ body {
 }
 
 /* Preload state rules to prevent layout flicker before Supabase initializes */
-.preload-logged-in #loginBtn {
+.preload-session-active #loginBtn {
 	display: none !important;
 }
 
-.preload-logged-in #userContainer {
+.preload-profile-ready #userContainer {
 	display: flex !important;
 }
 
-.preload-logged-out #userContainer {
+.preload-needs-onboarding #setupScreen {
+	display: flex !important;
+}
+
+.preload-logged-out #userContainer,
+.preload-logged-out #setupScreen {
 	display: none !important;
 }
 
@@ -299,7 +304,7 @@ header {
 .setup-container {
 	max-width: 600px;
 	margin: 0 auto;
-	padding: 40px 16px;
+	padding: 12px 16px;
 	width: 100%;
 	box-sizing: border-box;
 	display: flex;
@@ -311,13 +316,14 @@ header {
 	font-family: 'SF Pro Rounded', -apple-system, sans-serif;
 	font-size: 24px;
 	font-weight: 900;
-	margin-bottom: 24px;
+	margin-top: 12px;
+	margin-bottom: 16px;
 	color: var(--text-color);
 	letter-spacing: -0.5px;
 }
 
 .form-group {
-	margin-bottom: 24px;
+	margin-bottom: 18px;
 	display: flex;
 	flex-direction: column;
 }
@@ -325,7 +331,7 @@ header {
 .form-group label {
 	font-size: 15px;
 	color: var(--secondary-text);
-	margin-bottom: 12px;
+	margin-bottom: 10px;
 	font-weight: 700;
 }
 
@@ -339,8 +345,8 @@ header {
 	font-size: 17px;
 	cursor: pointer;
 	width: 100%;
-	margin-top: 32px;
-	margin-bottom: 20px;
+	margin-top: 20px;
+	margin-bottom: 12px;
 	transition: background-color 0.2s, transform 0.1s;
 	display: block;
 	text-align: center;
@@ -379,7 +385,7 @@ header {
 	background: rgba(245, 158, 11, 0.1); /* Amber light background */
 	border-color: var(--accent-color);
 	color: var(--accent-color);
-	font-weight: 700;
+	/* font-weight is kept at 500 to prevent width layout jumps */
 }
 
 /* Progress Bar */
@@ -388,7 +394,7 @@ header {
 	height: 6px;
 	background: var(--border-color);
 	border-radius: 4px;
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 	overflow: hidden;
 }
 
@@ -397,14 +403,6 @@ header {
 	background: var(--accent-color);
 	border-radius: 4px;
 	transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.setup-progress-text {
-	font-size: 13px;
-	color: var(--secondary-text);
-	text-align: right;
-	margin-bottom: 24px;
-	font-weight: 700;
 }
 
 /* Step Animations */
@@ -431,13 +429,14 @@ header {
 /* Mobile responsive setup styles */
 @media (max-width: 600px) {
 	.setup-container {
-		padding: 24px 16px;
+		padding: 8px 16px;
 		min-height: calc(100vh - 65px);
 	}
 
 	.setup-container h3 {
 		font-size: 20px;
-		margin-bottom: 20px;
+		margin-top: 8px;
+		margin-bottom: 12px;
 	}
 
 	.pill-btn {

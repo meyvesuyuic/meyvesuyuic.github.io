@@ -43,7 +43,7 @@ logoutBtn.addEventListener('click', async () => {
 // 3. Oturum Durumunu Dinleme
 supabase.auth.onAuthStateChange(async (event, session) => {
 	// Arayüz yükleme kilidini (preload sınıflarını) kaldırıyoruz
-	document.documentElement.classList.remove('preload-logged-in', 'preload-logged-out');
+	document.documentElement.classList.remove('preload-session-active', 'preload-profile-ready', 'preload-needs-onboarding', 'preload-logged-out');
 
 	if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
 		if (!session) {
@@ -165,10 +165,6 @@ function initSetupLogic(user, twitterData) {
 						newPill.classList.remove('selected');
 						selectedBeerStyles = selectedBeerStyles.filter(s => s !== val);
 					} else {
-						if (selectedBeerStyles.length >= 3) {
-							alert("En fazla 3 bira tarzı seçebilirsiniz.");
-							return;
-						}
 						newPill.classList.add('selected');
 						selectedBeerStyles.push(val);
 					}
@@ -191,9 +187,7 @@ function initSetupLogic(user, twitterData) {
 	// İlerleme çubuğunu güncelle
 	function updateProgress(step) {
 		const bar = document.getElementById('setupProgressBar');
-		const text = document.getElementById('currentStepNum');
 		if (bar) bar.style.width = (step === 1 ? '50%' : '100%');
-		if (text) text.innerText = step;
 	}
 
 	updateProgress(1);

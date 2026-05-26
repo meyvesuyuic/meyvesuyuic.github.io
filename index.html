@@ -21,16 +21,26 @@
 				}
 				const hasSession = localStorage.getItem('sb-qryjfafoimjcwcuruzah-auth-token');
 				
-				if (hasSession && cachedProfile) {
-					const profile = JSON.parse(cachedProfile);
-					// HTML elementine sınıf ekleyerek CSS üzerinden buton görünümünü anında kilitliyoruz
-					document.documentElement.classList.add('preload-logged-in');
+				if (hasSession) {
+					// Kullanıcı oturumu var, Giriş Yap butonunu kesinlikle göstermiyoruz
+					document.documentElement.classList.add('preload-session-active');
 					
-					// DOM hazır olduğunda verileri anında elementlere yazıyoruz (Supabase JS yüklenmesini beklemeden)
-					document.addEventListener('DOMContentLoaded', () => {
-						document.getElementById('userName').innerText = profile.display_name;
-						document.getElementById('userAvatar').src = profile.avatar_url;
-					});
+					let profile = null;
+					if (cachedProfile) {
+						try { profile = JSON.parse(cachedProfile); } catch(e){}
+					}
+					
+					if (profile && profile.is_onboarded) {
+						// Profil onaylıysa direkt profil alanını göster
+						document.documentElement.classList.add('preload-profile-ready');
+						document.addEventListener('DOMContentLoaded', () => {
+							document.getElementById('userName').innerText = profile.display_name;
+							document.getElementById('userAvatar').src = profile.avatar_url;
+						});
+					} else {
+						// Profil onaylı değilse onboarding ekranını göster
+						document.documentElement.classList.add('preload-needs-onboarding');
+					}
 				} else {
 					document.documentElement.classList.add('preload-logged-out');
 				}
@@ -75,14 +85,13 @@
 			<div class="setup-progress-wrapper">
 				<div class="setup-progress-bar" id="setupProgressBar" style="width: 50%;"></div>
 			</div>
-			<div class="setup-progress-text">Adım <span id="currentStepNum">1</span>/2</div>
 
 			<!-- ADIM 1 -->
 			<div id="step-1" class="setup-step active">
 				<h3>Bize biraz zevklerinden bahset</h3>
 				
 				<div class="form-group">
-					<label>Favori Bira Tarzların (En fazla 3 adet seçebilirsin)</label>
+					<label>Favori Bira Tarzların</label>
 					<div class="pill-group" id="beerStylesGroup">
 						<div class="pill-btn" data-value="Hafif & Ferahlatıcı (Lager/Pilsner)">Hafif & Ferahlatıcı</div>
 						<div class="pill-btn" data-value="Meyveli & Aromatik (IPA/Ale)">Meyveli & Aromatik</div>
@@ -95,6 +104,8 @@
 				<div class="form-group">
 					<label>Ne Sıklıkla Bira İçersin?</label>
 					<div class="pill-group" id="frequencyGroup">
+						<div class="pill-btn" data-value="Her gün">Her Gün</div>
+						<div class="pill-btn" data-value="Neredeyse her gün">Neredeyse Her Gün</div>
 						<div class="pill-btn" data-value="Haftada birkaç">Haftada Birkaç</div>
 						<div class="pill-btn" data-value="Sadece hafta sonları">Sadece Hafta Sonları</div>
 						<div class="pill-btn" data-value="Ayda yılda bir">Ayda Yılda Bir</div>
