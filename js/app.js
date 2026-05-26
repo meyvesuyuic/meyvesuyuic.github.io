@@ -1,5 +1,6 @@
 // Supabase'i ES Module olarak içe aktarıyoruz
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { districtsMap } from './turkey-cities.js';
 
 const SUPABASE_URL = 'https://qryjfafoimjcwcuruzah.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_mYbPrK4EDrlByE_ziop0Ug_nY_wjwaz';
@@ -135,22 +136,16 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		userAvatar.src = '';
 	}
 });
+let isSetupInitialized = false;
 
 // Setup mantığını yöneten sihirbaz fonksiyonu
 function initSetupLogic(user, twitterData) {
+	if (isSetupInitialized) return;
+	isSetupInitialized = true;
+
 	let selectedBeerStyles = [];
 	let selectedOtherAlcohols = [];
 	let selectedLocations = [];
-
-	const districtsMap = {
-		"İstanbul": ["Kadıköy", "Beşiktaş", "Şişli", "Beyoğlu", "Üsküdar", "Bakırköy", "Sarıyer", "Ataşehir", "Fatih", "Kartal", "Maltepe"],
-		"Ankara": ["Çankaya", "Yenimahalle", "Keçiören", "Etimesgut", "Mamak", "Altındağ"],
-		"İzmir": ["Konak (Alsancak)", "Karşıyaka", "Bornova", "Buca", "Çeşme", "Urla", "Foça"],
-		"Bursa": ["Nilüfer", "Osmangazi", "Yıldırım", "Mudanya"],
-		"Antalya": ["Muratpaşa", "Konyaaltı", "Kepez", "Alanya", "Kaş", "Kemer"],
-		"Eskişehir": ["Tepebaşı", "Odunpazarı"],
-		"Muğla": ["Bodrum", "Marmaris", "Fethiye", "Datça", "Akyaka", "Menteşe"]
-	};
 
 	const step1 = document.getElementById('step-1');
 	const step2 = document.getElementById('step-2');
@@ -162,6 +157,19 @@ function initSetupLogic(user, twitterData) {
 	const districtSelect = document.getElementById('districtSelect');
 	const addLocationBtn = document.getElementById('addLocationBtn');
 	const selectedLocationsGroup = document.getElementById('selectedLocationsGroup');
+
+	// Şehirleri dropdown listesine dinamik olarak doldur (81 il)
+	if (citySelect) {
+		citySelect.innerHTML = '<option value="" disabled selected>Şehir Seçin</option>';
+		// Şehir isimlerini Türkçe sıralamaya göre alfabetik sıralayalım
+		const cities = Object.keys(districtsMap).sort((a, b) => a.localeCompare(b, 'tr'));
+		cities.forEach(city => {
+			const opt = document.createElement('option');
+			opt.value = city;
+			opt.innerText = city;
+			citySelect.appendChild(opt);
+		});
+	}
 
 	// Şehir seçildiğinde ilçeleri doldur
 	if (citySelect && districtSelect) {
