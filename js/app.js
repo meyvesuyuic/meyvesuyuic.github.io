@@ -562,6 +562,7 @@ async function openProfileModal(user) {
 	prefSnack.innerText = profileData.drinking_snack || '-';
 	
 	// Modalı göster
+	document.body.style.overflow = 'hidden';
 	profileModal.style.display = 'flex';
 	setTimeout(() => {
 		profileModal.classList.add('active');
@@ -573,6 +574,7 @@ function closeProfileModal() {
 	profileModal.classList.remove('active');
 	setTimeout(() => {
 		profileModal.style.display = 'none';
+		document.body.style.overflow = '';
 	}, 350);
 }
 

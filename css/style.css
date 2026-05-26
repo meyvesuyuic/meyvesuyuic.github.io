@@ -755,10 +755,9 @@ header {
 /* Modal Body */
 .profile-modal-body {
 	flex: 1;
-	overflow-y: auto;
+	overflow-y: hidden;
 	padding: 24px 24px 32px 24px;
 	position: relative;
-	-webkit-overflow-scrolling: touch;
 }
 
 /* Profile Header (Avatar & Names) */
