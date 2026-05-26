@@ -30,10 +30,30 @@
 	font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+html,
 body {
 	background-color: #ffffff;
 	color: #333333;
 	min-height: 100vh;
+	overflow-x: hidden;
+	/* Prevent horizontal scrolling on mobile */
+}
+
+/* Preload state rules to prevent layout flicker before Supabase initializes */
+.preload-logged-in #loginBtn {
+	display: none !important;
+}
+
+.preload-logged-in #userContainer {
+	display: flex !important;
+}
+
+.preload-logged-out #userContainer {
+	display: none !important;
+}
+
+.preload-logged-out #loginBtn {
+	display: flex !important;
 }
 
 header {
@@ -152,4 +172,116 @@ header {
 
 .btn-twitter:hover {
 	background-color: #1a91da;
+}
+
+/* User Info Menu Styles */
+.user-container {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.user-name {
+	font-weight: 700;
+	font-size: 1rem;
+	color: #1c1917;
+}
+
+.user-avatar-wrapper {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	border: 2px solid #e7e5e4;
+	background-color: #e7e5e4;
+	/* Default gray/beige placeholder background */
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.user-avatar {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Hide the image element if it has no src to prevent broken icon */
+.user-avatar:not([src]),
+.user-avatar[src=""] {
+	display: none;
+}
+
+.btn-logout {
+	background: none;
+	border: none;
+	color: #78716c;
+	padding: 8px;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-logout:hover {
+	background-color: #f5f5f4;
+	color: #ef4444;
+}
+
+/* Mobil Uyumlu Medya Sorguları */
+@media (max-width: 600px) {
+	header {
+		padding: 12px 16px;
+		/* Reduced vertical & horizontal padding for compact mobile height */
+	}
+
+	.logo-container {
+		padding: 6px 12px;
+	}
+
+	.logo {
+		font-size: 1.85rem;
+		/* Scaled down logo text */
+		letter-spacing: -0.6px;
+	}
+
+	.fire {
+		font-size: 8px;
+		/* Scaled down fire base unit */
+		bottom: 6px;
+		height: 30px;
+	}
+
+	.btn-twitter {
+		padding: 8px 16px;
+		/* Slimmed button padding */
+		font-size: 0.85rem;
+		/* Smaller button font size */
+		gap: 6px;
+	}
+
+	.btn-twitter svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	.user-container {
+		gap: 8px;
+	}
+
+	.user-name {
+		font-size: 0.85rem;
+	}
+
+	.user-avatar-wrapper {
+		width: 32px;
+		height: 32px;
+	}
+
+	.btn-logout {
+		padding: 6px;
+	}
 }

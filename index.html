@@ -6,6 +6,39 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>bira.</title>
 	<link rel="stylesheet" href="/css/style.css">
+	<script>
+		// Sayfa yüklenirken "Giriş Yap" butonunun 1 saniye görünüp kaybolmasını (flicker) önlemek için
+		// Supabase SDK'sı yüklenmeden önce localStorage durumunu senkronize olarak kontrol ediyoruz:
+		(function() {
+			try {
+				let cachedProfile = null;
+				for (let i = 0; i < localStorage.length; i++) {
+					const key = localStorage.key(i);
+					if (key.startsWith('user_profile_')) {
+						cachedProfile = localStorage.getItem(key);
+						break;
+					}
+				}
+				const hasSession = localStorage.getItem('sb-qryjfafoimjcwcuruzah-auth-token');
+				
+				if (hasSession && cachedProfile) {
+					const profile = JSON.parse(cachedProfile);
+					// HTML elementine sınıf ekleyerek CSS üzerinden buton görünümünü anında kilitliyoruz
+					document.documentElement.classList.add('preload-logged-in');
+					
+					// DOM hazır olduğunda verileri anında elementlere yazıyoruz (Supabase JS yüklenmesini beklemeden)
+					document.addEventListener('DOMContentLoaded', () => {
+						document.getElementById('userName').innerText = profile.display_name;
+						document.getElementById('userAvatar').src = profile.avatar_url;
+					});
+				} else {
+					document.documentElement.classList.add('preload-logged-out');
+				}
+			} catch (e) {
+				console.error("Lokal oturum kontrolü sırasında hata:", e);
+			}
+		})();
+	</script>
 </head>
 
 <body>
@@ -22,6 +55,18 @@
 			</svg>
 			<span id="loginText">Twitter ile Giriş Yap</span>
 		</button>
+
+		<div class="user-container" id="userContainer" style="display: none;">
+			<span class="user-name" id="userName"></span>
+			<div class="user-avatar-wrapper">
+				<img class="user-avatar" id="userAvatar" src="" alt="Profil Resmi">
+			</div>
+			<button class="btn-logout" id="logoutBtn" title="Çıkış Yap">
+				<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+				</svg>
+			</button>
+		</div>
 	</header>
 
 	<script type="module" src="/js/app.js"></script>
