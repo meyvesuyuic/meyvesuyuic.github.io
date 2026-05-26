@@ -69,9 +69,11 @@
 		</button>
 
 		<div class="user-container" id="userContainer" style="display: none;">
-			<span class="user-name" id="userName"></span>
-			<div class="user-avatar-wrapper">
-				<img class="user-avatar" id="userAvatar" src="" alt="Profil Resmi">
+			<div class="user-profile-trigger" id="profileTrigger" title="Profili Görüntüle">
+				<span class="user-name" id="userName"></span>
+				<div class="user-avatar-wrapper">
+					<img class="user-avatar" id="userAvatar" src="" alt="Profil Resmi">
+				</div>
 			</div>
 			<button class="btn-logout" id="logoutBtn" title="Çıkış Yap">
 				<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -184,6 +186,70 @@
 			</div>
 		</div>
 	</main>
+
+	<!-- Profil Detay Modalı (Google Material 3 / iOS Bottom Sheet Esintili) -->
+	<div class="profile-modal" id="profileModal" style="display: none;">
+		<div class="profile-modal-overlay" id="profileModalOverlay"></div>
+		<div class="profile-modal-content">
+			<div class="profile-modal-header">
+				<button class="btn-close-modal" id="closeProfileBtn" title="Kapat">
+					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+			<div class="profile-modal-body">
+				<!-- Profil Üst Bilgisi (Banner + Avatar + İsimler) -->
+				<div class="profile-card-header">
+					<div class="profile-banner"></div>
+					<div class="profile-avatar-large-wrapper">
+						<img class="profile-avatar-large" id="profileAvatarLarge" src="" alt="Profil Resmi">
+					</div>
+					<h2 class="profile-display-name" id="profileDisplayName"></h2>
+					<p class="profile-nickname" id="profileNickname"></p>
+				</div>
+				
+				<!-- Profil Tercih Detayları -->
+				<div class="profile-preferences-section">
+					<div class="pref-item">
+						<div class="pref-label">Tercih Edilen Konumlar</div>
+						<div class="pref-tags" id="prefLocations"></div>
+					</div>
+					<div class="pref-item">
+						<div class="pref-label">Favori Bira Tarzları</div>
+						<div class="pref-tags" id="prefBeerStyles"></div>
+					</div>
+					<div class="pref-item">
+						<div class="pref-label">Diğer Alkol Tercihleri</div>
+						<div class="pref-tags" id="prefOtherAlcohols"></div>
+					</div>
+					<div class="pref-row">
+						<div class="pref-item half">
+							<div class="pref-label">Tüketim Sıklığı</div>
+							<span class="pref-value-badge" id="prefFrequency"></span>
+						</div>
+						<div class="pref-item half">
+							<div class="pref-label">İçim Ortamı</div>
+							<span class="pref-value-badge" id="prefEnvironment"></span>
+						</div>
+					</div>
+					<div class="pref-row">
+						<div class="pref-item half">
+							<div class="pref-label">Alkol Oranı (ABV)</div>
+							<span class="pref-value-badge" id="prefAbv"></span>
+						</div>
+						<div class="pref-item half">
+							<div class="pref-label">Yanındaki Atıştırmalık</div>
+							<span class="pref-value-badge" id="prefSnack"></span>
+						</div>
+					</div>
+				</div>
+				
+				<!-- Oturumu Kapat Butonu -->
+				<button class="btn-main btn-logout-modal" id="logoutBtnModal">Oturumu Kapat</button>
+			</div>
+		</div>
+	</div>
 
 	<script type="module" src="/js/app.js"></script>
 </body>

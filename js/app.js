@@ -14,6 +14,24 @@ const userName = document.getElementById('userName');
 const userAvatar = document.getElementById('userAvatar');
 const logoutBtn = document.getElementById('logoutBtn');
 
+// Profil Modalı Elemanları
+const profileTrigger = document.getElementById('profileTrigger');
+const profileModal = document.getElementById('profileModal');
+const closeProfileBtn = document.getElementById('closeProfileBtn');
+const profileModalOverlay = document.getElementById('profileModalOverlay');
+const logoutBtnModal = document.getElementById('logoutBtnModal');
+
+const profileAvatarLarge = document.getElementById('profileAvatarLarge');
+const profileDisplayName = document.getElementById('profileDisplayName');
+const profileNickname = document.getElementById('profileNickname');
+const prefLocations = document.getElementById('prefLocations');
+const prefBeerStyles = document.getElementById('prefBeerStyles');
+const prefOtherAlcohols = document.getElementById('prefOtherAlcohols');
+const prefFrequency = document.getElementById('prefFrequency');
+const prefEnvironment = document.getElementById('prefEnvironment');
+const prefAbv = document.getElementById('prefAbv');
+const prefSnack = document.getElementById('prefSnack');
+
 // 1. Giriş Butonu İşlevi
 loginBtn.addEventListener('click', async () => {
 	const { error } = await supabase.auth.signInWithOAuth({
@@ -55,6 +73,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		}
 
 		const user = session.user;
+		// Profil açma tetikleyicisi
+		if (profileTrigger) {
+			profileTrigger.onclick = () => {
+				openProfileModal(user);
+			};
+		}
 		const localKey = `user_profile_${user.id}`;
 		const cachedProfile = localStorage.getItem(localKey);
 
@@ -78,19 +102,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		// Supabase'den güncel profil durumunu çekelim
 		const { data: dbProfile, error: dbError } = await supabase
 			.from('profiles')
-			.select('is_onboarded, display_name, nickname, avatar_url')
+			.select('is_onboarded, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
 			.eq('id', user.id)
 			.maybeSingle();
 
 		if (dbProfile && dbProfile.is_onboarded) {
 			console.log("Kullanıcı onboard edilmiş, bilgiler yerel depolamaya yazılıyor.");
-			const localData = {
-				display_name: dbProfile.display_name,
-				nickname: dbProfile.nickname,
-				avatar_url: dbProfile.avatar_url,
-				is_onboarded: true
-			};
-			localStorage.setItem(localKey, JSON.stringify(localData));
+			localStorage.setItem(localKey, JSON.stringify(dbProfile));
 
 			userName.innerText = dbProfile.display_name;
 			userAvatar.src = dbProfile.avatar_url;
@@ -391,7 +409,14 @@ function initSetupLogic(user, twitterData) {
 				display_name: twitterData.display_name,
 				nickname: twitterData.nickname,
 				avatar_url: twitterData.avatar_url,
-				is_onboarded: true
+				is_onboarded: true,
+				favorite_styles: selectedBeerStyles,
+				other_alcohols: selectedOtherAlcohols,
+				preferred_locations: selectedLocations,
+				drinking_frequency: getPillValue('frequencyGroup'),
+				drinking_environment: environment,
+				abv_preference: abv,
+				drinking_snack: snack
 			};
 			localStorage.setItem(localKey, JSON.stringify(localData));
 
@@ -403,6 +428,114 @@ function initSetupLogic(user, twitterData) {
 			document.getElementById('setupScreen').style.display = 'none';
 		}
 	};
+}
+
+// Profil modalını açma
+async function openProfileModal(user) {
+	if (!user) return;
+	const localKey = `user_profile_${user.id}`;
+	let profileData = null;
+	const cachedProfile = localStorage.getItem(localKey);
+	
+	if (cachedProfile) {
+		try {
+			profileData = JSON.parse(cachedProfile);
+		} catch (e) {}
+	}
+	
+	// Eğer önbellek eksikse veritabanından çekelim
+	if (!profileData || !profileData.favorite_styles) {
+		const { data, error } = await supabase
+			.from('profiles')
+			.select('is_onboarded, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
+			.eq('id', user.id)
+			.maybeSingle();
+			
+		if (!error && data) {
+			profileData = data;
+			localStorage.setItem(localKey, JSON.stringify(data));
+		}
+	}
+	
+	if (!profileData) return;
+	
+	// Bilgileri yerleştir
+	profileAvatarLarge.src = profileData.avatar_url || '';
+	profileDisplayName.innerText = profileData.display_name || '';
+	profileNickname.innerText = profileData.nickname ? `@${profileData.nickname}` : '';
+	
+	// Konumlar
+	prefLocations.innerHTML = '';
+	if (profileData.preferred_locations && profileData.preferred_locations.length > 0) {
+		profileData.preferred_locations.forEach(loc => {
+			const span = document.createElement('span');
+			span.className = 'pref-tag';
+			span.innerText = loc;
+			prefLocations.appendChild(span);
+		});
+	} else {
+		prefLocations.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
+	}
+	
+	// Bira Tarzları
+	prefBeerStyles.innerHTML = '';
+	if (profileData.favorite_styles && profileData.favorite_styles.length > 0) {
+		profileData.favorite_styles.forEach(style => {
+			const span = document.createElement('span');
+			span.className = 'pref-tag';
+			span.innerText = style;
+			prefBeerStyles.appendChild(span);
+		});
+	} else {
+		prefBeerStyles.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
+	}
+	
+	// Diğer Alkoller
+	prefOtherAlcohols.innerHTML = '';
+	if (profileData.other_alcohols && profileData.other_alcohols.length > 0) {
+		profileData.other_alcohols.forEach(alc => {
+			const span = document.createElement('span');
+			span.className = 'pref-tag';
+			span.innerText = alc;
+			prefOtherAlcohols.appendChild(span);
+		});
+	} else {
+		prefOtherAlcohols.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
+	}
+	
+	// Tekli seçim değerleri
+	prefFrequency.innerText = profileData.drinking_frequency || '-';
+	prefEnvironment.innerText = profileData.drinking_environment || '-';
+	prefAbv.innerText = profileData.abv_preference || '-';
+	prefSnack.innerText = profileData.drinking_snack || '-';
+	
+	// Modalı göster
+	profileModal.style.display = 'flex';
+	setTimeout(() => {
+		profileModal.classList.add('active');
+	}, 10);
+}
+
+// Profil modalını kapatma
+function closeProfileModal() {
+	profileModal.classList.remove('active');
+	setTimeout(() => {
+		profileModal.style.display = 'none';
+	}, 350);
+}
+
+// Olay dinleyicilerini bağlayalım
+if (closeProfileBtn) {
+	closeProfileBtn.addEventListener('click', closeProfileModal);
+}
+if (profileModalOverlay) {
+	profileModalOverlay.addEventListener('click', closeProfileModal);
+}
+if (logoutBtnModal) {
+	logoutBtnModal.addEventListener('click', () => {
+		closeProfileModal();
+		logoutBtn.click();
+	});
 }
 
 // Fire Effect Particles Generation
