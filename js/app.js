@@ -58,6 +58,8 @@ logoutBtn.addEventListener('click', async () => {
 	} else {
 		userContainer.style.display = 'none';
 		loginBtn.style.display = 'flex';
+		const mapView = document.getElementById('mapView');
+		if (mapView) mapView.style.display = 'none';
 	}
 });
 
@@ -94,6 +96,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 					loginBtn.style.display = 'none';
 					userContainer.style.display = 'flex';
 					document.getElementById('setupScreen').style.display = 'none';
+					const mapView = document.getElementById('mapView');
+					if (mapView) mapView.style.display = 'flex';
+					loadBiraMap();
 					return;
 				}
 			} catch (e) {
@@ -117,6 +122,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
+			const mapView = document.getElementById('mapView');
+			if (mapView) mapView.style.display = 'flex';
+			loadBiraMap();
 		} else {
 			// Onboard edilmemiş veya kaydı yok!
 			console.log("Kullanıcı kurulum ekranını tamamlamamış. Setup ekranı açılıyor.");
@@ -152,6 +160,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		loginBtn.style.display = 'flex';
 		userContainer.style.display = 'none';
 		document.getElementById('setupScreen').style.display = 'none';
+		const mapView = document.getElementById('mapView');
+		if (mapView) mapView.style.display = 'none';
 		userName.innerText = '';
 		userAvatar.src = '';
 	}
@@ -428,6 +438,9 @@ function initSetupLogic(user, twitterData) {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
+			const mapView = document.getElementById('mapView');
+			if (mapView) mapView.style.display = 'flex';
+			loadBiraMap();
 		}
 	};
 }
@@ -589,6 +602,166 @@ if (logoutBtnModal) {
 	logoutBtnModal.addEventListener('click', () => {
 		closeProfileModal();
 		logoutBtn.click();
+	});
+}
+
+// Bira Severler Haritasını Yükle ve Çiz (Snapchat Tarzı)
+async function loadBiraMap() {
+	const mapContainer = document.getElementById('mapContainer');
+	const mapView = document.getElementById('mapView');
+	if (!mapContainer || !mapView) return;
+
+	// 1. SVG Haritasını Çek ve Inline Enjekte Et
+	if (!mapContainer.querySelector('svg')) {
+		try {
+			const res = await fetch('/turkey.svg');
+			const svgText = await res.text();
+			mapContainer.innerHTML = svgText;
+		} catch (err) {
+			console.error("Harita yüklenirken hata oluştu:", err);
+			return;
+		}
+	}
+
+	const svgTurkey = document.getElementById('svg-turkey');
+	if (!svgTurkey) return;
+
+	// 2. Supabase'den onboarded olan tüm kullanıcıları çek
+	const { data: profiles, error } = await supabase
+		.from('profiles')
+		.select('id, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
+		.eq('is_onboarded', true);
+
+	if (error) {
+		console.error("Kullanıcı profilleri çekilemedi:", error.message);
+		return;
+	}
+
+	// 3. Kullanıcıları tercih ettikleri şehirlere göre gruplandır
+	const cityGroups = {};
+	profiles.forEach(profile => {
+		if (profile.preferred_locations && profile.preferred_locations.length > 0) {
+			profile.preferred_locations.forEach(loc => {
+				const city = loc.split(',')[0].trim();
+				if (!cityGroups[city]) {
+					cityGroups[city] = [];
+				}
+				if (!cityGroups[city].some(p => p.id === profile.id)) {
+					cityGroups[city].push(profile);
+				}
+			});
+		}
+	});
+
+	// Harita üzerindeki eski avatarları ve aktif şehir sınıflarını temizle
+	document.querySelectorAll('.map-city-group').forEach(el => el.remove());
+	svgTurkey.querySelectorAll('g.active-city').forEach(el => el.classList.remove('active-city'));
+
+	const tooltip = document.getElementById('mapTooltip');
+	const mapWrapper = document.querySelector('.map-wrapper');
+
+	// Haritadaki şehir gruplarını dinle (Tooltip için)
+	const cityGroupsSvg = svgTurkey.querySelectorAll('g');
+	cityGroupsSvg.forEach(g => {
+		const cityName = g.getAttribute('data-city-name');
+		if (!cityName) return;
+
+		// Eğer şehirde kullanıcı varsa aktif şehir sınıfını ekleyelim
+		if (cityGroups[cityName] && cityGroups[cityName].length > 0) {
+			g.classList.add('active-city');
+		}
+
+		g.addEventListener('mouseenter', (e) => {
+			const count = cityGroups[cityName] ? cityGroups[cityName].length : 0;
+			tooltip.innerHTML = `<strong>${cityName}</strong><br>${count} Sever`;
+			tooltip.classList.add('visible');
+		});
+
+		g.addEventListener('mousemove', (e) => {
+			const wrapperRect = mapWrapper.getBoundingClientRect();
+			const x = e.clientX - wrapperRect.left;
+			const y = e.clientY - wrapperRect.top;
+			tooltip.style.left = `${x}px`;
+			tooltip.style.top = `${y}px`;
+		});
+
+		g.addEventListener('mouseleave', () => {
+			tooltip.classList.remove('visible');
+		});
+	});
+
+	// 4. Şehir gruplarına göre avatarları harita üstüne yerleştir
+	Object.keys(cityGroups).forEach(city => {
+		// Haritadaki ilgili şehri bulalım
+		const cityId = city.toLowerCase()
+			.replace(/ı/g, 'i')
+			.replace(/ğ/g, 'g')
+			.replace(/ü/g, 'u')
+			.replace(/ş/g, 's')
+			.replace(/ö/g, 'o')
+			.replace(/ç/g, 'c');
+		
+		const citySvgGroup = svgTurkey.querySelector(`g[id="${cityId}"]`) || svgTurkey.querySelector(`g[data-city-name="${city}"]`);
+		if (!citySvgGroup) return;
+
+		// Bounding Box üzerinden ilin merkezini hesapla
+		const bbox = citySvgGroup.getBBox();
+		const centerX = bbox.x + bbox.width / 2;
+		const centerY = bbox.y + bbox.height / 2;
+
+		// viewBox="0 0 1005 490" parametresine göre yüzde hesabı yapalım
+		const percentX = (centerX / 1005) * 100;
+		const percentY = (centerY / 490) * 100;
+
+		// Şehir grubu div'i oluştur
+		const cityGroupDiv = document.createElement('div');
+		cityGroupDiv.className = 'map-city-group';
+		cityGroupDiv.style.left = `${percentX}%`;
+		cityGroupDiv.style.top = `${percentY}%`;
+
+		const usersInCity = cityGroups[city];
+		const N = usersInCity.length;
+
+		usersInCity.forEach((profile, index) => {
+			const avatarBubble = document.createElement('div');
+			avatarBubble.className = 'map-avatar-bubble';
+			avatarBubble.title = profile.display_name;
+
+			const img = document.createElement('img');
+			img.src = profile.avatar_url || '';
+			img.alt = profile.display_name;
+			avatarBubble.appendChild(img);
+
+			// Tıklama durumunda profil modalını aç
+			avatarBubble.addEventListener('click', (e) => {
+				e.stopPropagation();
+				const mockUser = {
+					id: profile.id,
+					user_metadata: {
+						avatar_url: profile.avatar_url,
+						full_name: profile.display_name,
+						preferred_username: profile.nickname
+					}
+				};
+				openProfileModal(mockUser);
+			});
+
+			// Snapchat dairesel dağıtma (Floating Scatter)
+			if (N > 1) {
+				const angle = (index / N) * 2 * Math.PI;
+				const isMobile = window.innerWidth <= 600;
+				const radius = isMobile ? 18 : 24;
+				const ox = Math.cos(angle) * radius;
+				const oy = Math.sin(angle) * radius;
+				avatarBubble.style.transform = `translate(-50%, -50%) translate(${ox}px, ${oy}px)`;
+			} else {
+				avatarBubble.style.transform = 'translate(-50%, -50%)';
+			}
+
+			cityGroupDiv.appendChild(avatarBubble);
+		});
+
+		mapContainer.appendChild(cityGroupDiv);
 	});
 }
 

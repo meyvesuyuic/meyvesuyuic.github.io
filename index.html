@@ -186,6 +186,20 @@
 				<button id="saveProfileBtn" class="btn-main">Kurulumu Tamamla</button>
 			</div>
 		</div>
+
+		<!-- Harita Görünümü (Onboarding'i Tamamlamış Kullanıcılar İçin) -->
+		<div class="map-view" id="mapView" style="display: none;">
+			<div class="map-header">
+				<h1>bira. Haritası</h1>
+				<p>Şehirlerdeki severleri keşfet, avatarlara tıklayarak profillerini incele!</p>
+			</div>
+			<div class="map-wrapper">
+				<div class="map-container" id="mapContainer">
+					<!-- turkey.svg buraya inline olarak yüklenecektir -->
+				</div>
+				<div class="map-tooltip" id="mapTooltip" style="display: none;"></div>
+			</div>
+		</div>
 	</main>
 
 	<!-- Profil Detay Modalı (Google Material 3 / iOS Bottom Sheet Esintili) -->

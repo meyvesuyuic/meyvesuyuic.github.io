@@ -994,3 +994,201 @@ header {
 		border-radius: 0 !important;
 	}
 }
+
+/* Bira Severler Haritası (Snapchat Map) Stilleri */
+.map-view {
+	max-width: 1000px;
+	margin: 0 auto;
+	padding: 32px 16px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	box-sizing: border-box;
+	animation: setupFadeSlideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.map-header {
+	text-align: center;
+	margin-bottom: 32px;
+}
+
+.map-header h1 {
+	font-family: 'SF Pro Rounded', -apple-system, sans-serif;
+	font-size: 2.2rem;
+	font-weight: 900;
+	letter-spacing: -1px;
+	color: #1c1917;
+	margin-bottom: 8px;
+}
+
+.map-header p {
+	color: #78716c;
+	font-size: 1rem;
+	font-weight: 500;
+}
+
+.map-wrapper {
+	position: relative;
+	width: 100%;
+	background: #ffffff;
+	border: 1px solid #e7e5e4;
+	border-radius: 24px;
+	padding: 24px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.map-container {
+	position: relative;
+	width: 100%;
+	height: auto;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.map-container svg {
+	width: 100%;
+	height: auto;
+	max-height: 70vh;
+	display: block;
+}
+
+/* SVG Şehir Path Stilleri (Açık ve Temiz Tema) */
+.turkey g path {
+	fill: #f5f5f4;
+	stroke: #ffffff;
+	stroke-width: 1.5px;
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+}
+
+/* Kullanıcı Bulunan Şehir (Aktif Şehir) */
+.turkey g.active-city path {
+	fill: #fef3c7;
+	stroke: #fbcfe8;
+	stroke-width: 1.8px;
+}
+
+/* Şehir Üzerine Gelme Efekti */
+.turkey g:hover path {
+	fill: #fde68a !important;
+	stroke: #f59e0b !important;
+	stroke-width: 2.2px !important;
+	filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.15));
+}
+
+/* Glassmorphic Harita Tooltip'i */
+.map-tooltip {
+	position: absolute;
+	background: rgba(255, 255, 255, 0.85);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border: 1px solid rgba(231, 229, 228, 0.5);
+	padding: 8px 14px;
+	border-radius: 12px;
+	font-size: 13.5px;
+	font-weight: 600;
+	color: #1c1917;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+	pointer-events: none;
+	z-index: 100;
+	transform: translate(-50%, -100%);
+	margin-top: -10px;
+	opacity: 0;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+	white-space: nowrap;
+}
+
+.map-tooltip.visible {
+	opacity: 1;
+}
+
+/* Snapchat Tarzı Dairesel Avatar Kabarcıkları */
+.map-city-group {
+	position: absolute;
+	pointer-events: none;
+	z-index: 20;
+	width: 0;
+	height: 0;
+}
+
+.map-avatar-bubble {
+	position: absolute;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	border: 2px solid #ffffff;
+	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25), 0 0 0 2px #f59e0b;
+	background-color: #e7e5e4;
+	cursor: pointer;
+	pointer-events: auto;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.map-avatar-bubble img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Avatar Üzerine Gelme Büyüme Hareketi */
+.map-avatar-bubble:hover {
+	transform: translate(-50%, -50%) scale(1.2) !important;
+	z-index: 50;
+	box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4), 0 0 0 2.5px #f59e0b;
+}
+
+/* Mobil Ekran Boyutu Uyumlaştırması */
+@media (max-width: 600px) {
+	.map-view {
+		padding: 16px 8px;
+	}
+
+	.map-header {
+		margin-bottom: 20px;
+	}
+
+	.map-header h1 {
+		font-size: 1.75rem;
+	}
+
+	.map-header p {
+		font-size: 0.85rem;
+	}
+
+	.map-wrapper {
+		border-radius: 16px;
+		padding: 12px;
+	}
+
+	.turkey g path {
+		stroke-width: 1px;
+	}
+
+	.turkey g.active-city path {
+		stroke-width: 1.2px;
+	}
+
+	.turkey g:hover path {
+		stroke-width: 1.5px !important;
+	}
+
+	.map-avatar-bubble {
+		width: 30px;
+		height: 30px;
+		border-width: 1.5px;
+		box-shadow: 0 3px 8px rgba(245, 158, 11, 0.2), 0 0 0 1.5px #f59e0b;
+	}
+
+	.map-avatar-bubble:hover {
+		box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35), 0 0 0 2px #f59e0b;
+	}
+}
