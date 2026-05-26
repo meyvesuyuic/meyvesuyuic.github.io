@@ -31,6 +31,8 @@ const prefFrequency = document.getElementById('prefFrequency');
 const prefEnvironment = document.getElementById('prefEnvironment');
 const prefAbv = document.getElementById('prefAbv');
 const prefSnack = document.getElementById('prefSnack');
+const twitterProfileLink = document.getElementById('twitterProfileLink');
+const profileActionWrapper = document.getElementById('profileActionWrapper');
 
 // 1. Giriş Butonu İşlevi
 loginBtn.addEventListener('click', async () => {
@@ -464,6 +466,35 @@ async function openProfileModal(user) {
 	profileDisplayName.innerText = profileData.display_name || '';
 	profileNickname.innerText = profileData.nickname ? `@${profileData.nickname}` : '';
 	
+	// Twitter profil butonu ayarı
+	if (twitterProfileLink && profileActionWrapper) {
+		if (profileData.nickname) {
+			profileActionWrapper.style.display = 'block';
+			twitterProfileLink.onclick = (e) => {
+				e.preventDefault();
+				const nickname = profileData.nickname;
+				const twitterUrl = `https://x.com/${nickname}`;
+				const twitterAppUrl = `twitter://user?screen_name=${nickname}`;
+				
+				const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+				if (isMobile) {
+					const start = Date.now();
+					window.location.href = twitterAppUrl;
+					
+					setTimeout(() => {
+						if (Date.now() - start < 2000) {
+							window.open(twitterUrl, '_blank');
+						}
+					}, 1500);
+				} else {
+					window.open(twitterUrl, '_blank');
+				}
+			};
+		} else {
+			profileActionWrapper.style.display = 'none';
+		}
+	}
+	
 	// Konumlar
 	prefLocations.innerHTML = '';
 	if (profileData.preferred_locations && profileData.preferred_locations.length > 0) {
@@ -492,11 +523,32 @@ async function openProfileModal(user) {
 	
 	// Diğer Alkoller
 	prefOtherAlcohols.innerHTML = '';
+	
+	const alcoholColors = {
+		"Rakı": { bg: "#e0f2fe", border: "#0ea5e9", color: "#0369a1" },
+		"Şarap": { bg: "#ffe4e6", border: "#f43f5e", color: "#be185d" },
+		"Viski": { bg: "#fef3c7", border: "#f59e0b", color: "#b45309" },
+		"Cin": { bg: "#d1fae5", border: "#10b981", color: "#047857" },
+		"Votka": { bg: "#f1f5f9", border: "#64748b", color: "#475569" },
+		"Tekila": { bg: "#fef9c3", border: "#eab308", color: "#a16207" },
+		"Kokteyl": { bg: "#f3e8ff", border: "#a855f7", color: "#6d28d9" },
+		"İçmiyorum": { bg: "#f5f5f4", border: "#78716c", color: "#57504b" }
+	};
+	
 	if (profileData.other_alcohols && profileData.other_alcohols.length > 0) {
 		profileData.other_alcohols.forEach(alc => {
 			const span = document.createElement('span');
 			span.className = 'pref-tag';
 			span.innerText = alc;
+			
+			// Her alkol seçeneği için pastel renk setini uygula
+			if (alcoholColors[alc]) {
+				span.style.backgroundColor = alcoholColors[alc].bg;
+				span.style.borderColor = alcoholColors[alc].border;
+				span.style.color = alcoholColors[alc].color;
+				span.style.fontWeight = '600';
+			}
+			
 			prefOtherAlcohols.appendChild(span);
 		});
 	} else {

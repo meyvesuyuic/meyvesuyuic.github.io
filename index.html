@@ -9,7 +9,7 @@
 	<script>
 		// Sayfa yüklenirken "Giriş Yap" butonunun 1 saniye görünüp kaybolmasını (flicker) önlemek için
 		// Supabase SDK'sı yüklenmeden önce localStorage durumunu senkronize olarak kontrol ediyoruz:
-		(function() {
+		(function () {
 			try {
 				let cachedProfile = null;
 				for (let i = 0; i < localStorage.length; i++) {
@@ -20,16 +20,16 @@
 					}
 				}
 				const hasSession = localStorage.getItem('sb-qryjfafoimjcwcuruzah-auth-token');
-				
+
 				if (hasSession) {
 					// Kullanıcı oturumu var, Giriş Yap butonunu kesinlikle göstermiyoruz
 					document.documentElement.classList.add('preload-session-active');
-					
+
 					let profile = null;
 					if (cachedProfile) {
-						try { profile = JSON.parse(cachedProfile); } catch(e){}
+						try { profile = JSON.parse(cachedProfile); } catch (e) { }
 					}
-					
+
 					if (profile) {
 						// Profil önbellekte varsa profil alanını göster
 						document.documentElement.classList.add('preload-profile-ready');
@@ -38,7 +38,7 @@
 							document.getElementById('userAvatar').src = profile.avatar_url;
 						});
 					}
-					
+
 					if (!profile || !profile.is_onboarded) {
 						// Profil onaylı değilse onboarding ekranını göster
 						document.documentElement.classList.add('preload-needs-onboarding');
@@ -77,7 +77,8 @@
 			</div>
 			<button class="btn-logout" id="logoutBtn" title="Çıkış Yap">
 				<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+					<path stroke-linecap="round" stroke-linejoin="round"
+						d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
 				</svg>
 			</button>
 		</div>
@@ -93,7 +94,7 @@
 			<!-- ADIM 1 -->
 			<div id="step-1" class="setup-step active">
 				<h3>Bize biraz zevklerinden bahset</h3>
-				
+
 				<div class="form-group">
 					<label>Yaşadığın / Bira İçmeyi Sevdiğin Konumlar (En fazla 3 adet ekleyebilirsin)</label>
 					<div class="location-picker-wrapper">
@@ -209,7 +210,14 @@
 						<p class="profile-nickname" id="profileNickname"></p>
 					</div>
 				</div>
-				
+
+				<!-- Twitter Profiline Git Butonu -->
+				<div class="profile-action-wrapper" id="profileActionWrapper" style="display: none; margin-bottom: 24px;">
+					<a class="btn-twitter-profile-large" id="twitterProfileLink" href="#">
+						Profili Gör
+					</a>
+				</div>
+
 				<!-- Profil Tercih Detayları -->
 				<div class="profile-preferences-section">
 					<div class="pref-item">
@@ -245,7 +253,7 @@
 						</div>
 					</div>
 				</div>
-				
+
 				<!-- Oturumu Kapat Butonu -->
 				<button class="btn-main btn-logout-modal" id="logoutBtnModal">Oturumu Kapat</button>
 			</div>
