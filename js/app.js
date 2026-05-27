@@ -640,6 +640,17 @@ async function openProfileModal(user) {
 // Profil modalını kapatma
 function closeProfileModal() {
 	profileModal.classList.remove('active');
+	
+	const modalContent = document.querySelector('.profile-modal-content');
+	const modalOverlay = document.getElementById('profileModalOverlay');
+	
+	profileModal.addEventListener('transitionend', () => {
+		if (!profileModal.classList.contains('active')) {
+			if (modalContent) modalContent.style.willChange = 'auto';
+			if (modalOverlay) modalOverlay.style.willChange = 'auto';
+		}
+	}, { once: true });
+
 	setTimeout(() => {
 		profileModal.style.display = 'none';
 		document.body.style.overflow = '';
@@ -1166,6 +1177,17 @@ function closeDrinkersModal() {
 	if (!modal) return;
 
 	modal.classList.remove('active');
+	
+	const modalContent = modal.querySelector('.profile-modal-content');
+	const modalOverlay = document.getElementById('drinkersModalOverlay');
+	
+	modal.addEventListener('transitionend', () => {
+		if (!modal.classList.contains('active')) {
+			if (modalContent) modalContent.style.willChange = 'auto';
+			if (modalOverlay) modalOverlay.style.willChange = 'auto';
+		}
+	}, { once: true });
+
 	setTimeout(() => {
 		modal.style.display = 'none';
 		document.body.style.overflow = '';
