@@ -640,10 +640,10 @@ async function openProfileModal(user) {
 // Profil modalını kapatma
 function closeProfileModal() {
 	profileModal.classList.remove('active');
-	
+
 	const modalContent = document.querySelector('.profile-modal-content');
 	const modalOverlay = document.getElementById('profileModalOverlay');
-	
+
 	profileModal.addEventListener('transitionend', () => {
 		if (!profileModal.classList.contains('active')) {
 			if (modalContent) modalContent.style.willChange = 'auto';
@@ -833,35 +833,67 @@ function clearMap() {
 async function loadMapData() {
 	const { data: { session } } = await supabase.auth.getSession();
 	if (!session) {
-		// Harita sadece giriş yapmış kullanıcılara gösterilir.
-		// public_profiles view'ı artık yalnızca authenticated 
-		// kullanıcılara açık — anon erişimi Supabase'de revoke edildi.
 		console.warn("Yetkisiz harita yükleme girişimi engellendi.");
 		clearMap();
 		return;
 	}
 
-	// 5 Dakikalık Önbellek (Cache) Kontrolü
+	// Switch disabled durumunu kaldırıyoruz (Giriş yapıldığında)
+	document.querySelectorAll('input[id^="toggleActive-"]').forEach(input => {
+		input.disabled = false;
+		
+		// Görsel olarak da disabled durumunu kaldıralım
+		const wrapper = input.closest('.toggle-switch-wrapper');
+		if (wrapper) {
+			wrapper.style.opacity = '1';
+			wrapper.style.cursor = 'pointer';
+		}
+		const slider = input.nextElementSibling;
+		if (slider) {
+			slider.classList.remove('disabled');
+		}
+	});
+
+	// EĞER LIVE MOD AÇIKSA
+	if (isLiveMode) {
+		try {
+			console.log("Fetching live sessions from Supabase...");
+			const { data, error } = await supabase.from('public_live_sessions').select('*');
+			if (error) throw error;
+
+			currentMapUsers = { istanbul: [], ankara: [], izmir: [], eskisehir: [] };
+
+			if (data) {
+				data.forEach(sess => {
+					const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
+					const cityId = normalize(sess.city);
+					if (currentMapUsers[cityId]) currentMapUsers[cityId].push(sess);
+				});
+
+				CITIES.forEach(city => { renderLivePins(currentMapUsers[city.id], city.id); });
+			}
+		} catch (err) {
+			console.error("Error loading live sessions:", err.message);
+		}
+		return;
+	}
+
+	// NORMAL MOD
 	const cachedTime = localStorage.getItem(MAP_CACHE_TIME_KEY);
 	const cachedData = localStorage.getItem(MAP_CACHE_KEY);
 	const now = Date.now();
 
 	if (cachedTime && cachedData && (now - parseInt(cachedTime, 10) < MAP_CACHE_DURATION)) {
 		try {
-			console.log("Harita kullanıcı verileri yerel depolamadan (Cache) yüklendi.");
 			currentMapUsers = JSON.parse(cachedData);
-			CITIES.forEach(city => {
-				renderMapUsers(city.id, currentMapUsers[city.id]);
-			});
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id]); });
 			return;
 		} catch (e) {
-			console.error("Yerel harita önbelleği okunamadı, yeniden çekiliyor:", e);
+			console.error("Yerel harita önbelleği okunamadı:", e);
 		}
 	}
 
 	try {
-		console.log("Fetching map users from Supabase...");
-		// Fetch up to 100 onboarded users, sorted by latest updates
 		const { data, error } = await supabase
 			.from('public_profiles')
 			.select('id, display_name, nickname, avatar_url, preferred_locations, updated_at')
@@ -870,13 +902,7 @@ async function loadMapData() {
 
 		if (error) throw error;
 
-		// Reset lists
-		currentMapUsers = {
-			istanbul: [],
-			ankara: [],
-			izmir: [],
-			eskisehir: []
-		};
+		currentMapUsers = { istanbul: [], ankara: [], izmir: [], eskisehir: [] };
 
 		if (data) {
 			data.forEach(profile => {
@@ -886,75 +912,20 @@ async function loadMapData() {
 						if (parts.length >= 2) {
 							const rawCity = parts[0].trim();
 							const dist = parts[1].trim();
-
-							const normalize = (str) => str
-								.replace(/İ/g, 'i')
-								.replace(/I/g, 'i')
-								.replace(/ı/g, 'i')
-								.replace(/Ş/g, 's')
-								.replace(/ş/g, 's')
-								.replace(/Ğ/g, 'g')
-								.replace(/ğ/g, 'g')
-								.replace(/Ü/g, 'u')
-								.replace(/ü/g, 'u')
-								.replace(/Ö/g, 'o')
-								.replace(/ö/g, 'o')
-								.replace(/Ç/g, 'c')
-								.replace(/ç/g, 'c')
-								.toLowerCase();
-
+							const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
 							const city = normalize(rawCity);
-
-							if (city === 'istanbul') {
-								currentMapUsers.istanbul.push({
-									id: profile.id,
-									display_name: profile.display_name,
-									nickname: profile.nickname,
-									avatar_url: profile.avatar_url,
-									district: dist,
-									updated_at: profile.updated_at
-								});
-							} else if (city === 'ankara') {
-								currentMapUsers.ankara.push({
-									id: profile.id,
-									display_name: profile.display_name,
-									nickname: profile.nickname,
-									avatar_url: profile.avatar_url,
-									district: dist,
-									updated_at: profile.updated_at
-								});
-							} else if (city === 'izmir') {
-								currentMapUsers.izmir.push({
-									id: profile.id,
-									display_name: profile.display_name,
-									nickname: profile.nickname,
-									avatar_url: profile.avatar_url,
-									district: dist,
-									updated_at: profile.updated_at
-								});
-							} else if (city === 'eskisehir') {
-								currentMapUsers.eskisehir.push({
-									id: profile.id,
-									display_name: profile.display_name,
-									nickname: profile.nickname,
-									avatar_url: profile.avatar_url,
-									district: dist,
-									updated_at: profile.updated_at
-								});
+							if (currentMapUsers[city]) {
+								currentMapUsers[city].push({ id: profile.id, display_name: profile.display_name, nickname: profile.nickname, avatar_url: profile.avatar_url, district: dist, updated_at: profile.updated_at });
 							}
 						}
 					});
 				}
 			});
 
-			// Önbelleğe kaydet
 			localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(currentMapUsers));
 			localStorage.setItem(MAP_CACHE_TIME_KEY, now.toString());
 
-			// Her şehri ayrı ayrı çizdir
-			CITIES.forEach(city => {
-				renderMapUsers(city.id, currentMapUsers[city.id]);
-			});
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id]); });
 		}
 	} catch (err) {
 		console.error("Error loading map users:", err.message);
@@ -972,7 +943,7 @@ function renderMapUsers(cityId, users) {
 
 	const stableUsers = [...users].sort((a, b) => a.id.localeCompare(b.id));
 	const total = stableUsers.length;
-	
+
 	// Toplam kullanıcı sayısını güncelle
 	const totalCounter = document.getElementById(`cityTotal-${cityId}`);
 	if (totalCounter) {
@@ -1137,7 +1108,7 @@ function renderDrinkersPage(usersInCity, container) {
 
 		const infoHeader = document.createElement('div');
 		infoHeader.className = 'drinker-info-header';
-		
+
 		const nameSpan = document.createElement('span');
 		nameSpan.className = 'drinker-name';
 		nameSpan.textContent = user.display_name;
@@ -1220,10 +1191,10 @@ function closeDrinkersModal() {
 	if (!modal) return;
 
 	modal.classList.remove('active');
-	
+
 	const modalContent = modal.querySelector('.profile-modal-content');
 	const modalOverlay = document.getElementById('drinkersModalOverlay');
-	
+
 	modal.addEventListener('transitionend', () => {
 		if (!modal.classList.contains('active')) {
 			if (modalContent) modalContent.style.willChange = 'auto';
@@ -1249,3 +1220,334 @@ document.addEventListener('DOMContentLoaded', () => {
 		overlay.addEventListener('click', closeDrinkersModal);
 	}
 });
+
+
+/* ==============================================================
+	 ANLIK İÇİYORUM (LIVE SESSIONS) EKLENTİSİ
+============================================================== */
+let isLiveMode = false;
+
+// Event Delegation for Map Switches
+document.addEventListener('change', (e) => {
+	if (e.target && e.target.id && e.target.id.startsWith('toggleActive-')) {
+		const cityId = e.target.id.replace('toggleActive-', '');
+		const isChecked = e.target.checked;
+
+		supabase.auth.getSession().then(({ data: { session } }) => {
+			if (!session) {
+				alert("Anlık içiyorum özelliğini kullanmak için giriş yapmalısınız.");
+				e.target.checked = false;
+				return;
+			}
+
+			if (isChecked) {
+				handleLiveToggleOn(cityId, e.target);
+			} else {
+				isLiveMode = false;
+				document.querySelectorAll('.map-section').forEach(el => el.classList.remove('live-mode'));
+				document.querySelectorAll('input[id^="toggleActive-"]').forEach(input => input.checked = false);
+				loadMapData();
+			}
+		});
+	}
+});
+
+async function handleLiveToggleOn(cityId, checkboxEl) {
+	isLiveMode = true;
+
+	const mapSection = document.getElementById('mapSection');
+	if (mapSection) mapSection.classList.add('live-mode');
+
+	document.querySelectorAll('input[id^="toggleActive-"]').forEach(input => {
+		if (input.id !== `toggleActive-${cityId}`) input.checked = true;
+	});
+
+	await loadMapData();
+
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return;
+
+	const { data: hasSession } = await supabase.rpc('has_recent_session', { p_user_id: user.id });
+
+	if (hasSession) {
+		const { data: sessionData } = await supabase
+			.from('public_live_sessions')
+			.select('*')
+			.eq('user_id', user.id)
+			.maybeSingle();
+
+		if (sessionData) {
+			openLiveSessionModal(sessionData);
+		}
+	} else {
+		openCreateLiveSessionUI();
+	}
+}
+
+// Yeni Modal Dinleyicileri
+document.addEventListener('DOMContentLoaded', () => {
+	const submitLiveSessionBtn = document.getElementById('submitLiveSessionBtn');
+	if (submitLiveSessionBtn) {
+		submitLiveSessionBtn.addEventListener('click', async () => {
+			const city = document.getElementById('liveCitySelect').value;
+			const district = document.getElementById('liveDistrictSelect').value;
+			const drinkTime = document.getElementById('liveDrinkTimeInput').value;
+			const note = document.getElementById('liveNoteInput').value;
+
+			if (!city || !district) {
+				alert("Lütfen şehir ve ilçe seçin.");
+				return;
+			}
+
+			await createLiveSession(city, district, note, drinkTime);
+		});
+	}
+
+	const bindClose = (btnId, overlayId, modalId) => {
+		const btn = document.getElementById(btnId);
+		const overlay = document.getElementById(overlayId);
+		if (btn) btn.addEventListener('click', () => closeCustomModal(modalId));
+		if (overlay) overlay.addEventListener('click', () => closeCustomModal(modalId));
+	};
+
+	bindClose('closeLiveSessionBtn', 'liveSessionModalOverlay', 'liveSessionModal');
+	bindClose('closeCreateLiveSessionBtn', 'createLiveSessionModalOverlay', 'createLiveSessionModal');
+
+	const deleteLiveSessionBtn = document.getElementById('deleteLiveSessionBtn');
+	if (deleteLiveSessionBtn) {
+		deleteLiveSessionBtn.addEventListener('click', async () => {
+			const sessionId = deleteLiveSessionBtn.getAttribute('data-session-id');
+			if (sessionId) {
+				if (confirm("İlanı silmek istediğine emin misin?")) {
+					await deleteLiveSession(sessionId);
+				}
+			}
+		});
+	}
+});
+
+function closeCustomModal(modalId) {
+	const modal = document.getElementById(modalId);
+	if (!modal) return;
+	modal.classList.remove('active');
+	setTimeout(() => {
+		modal.style.display = 'none';
+		document.body.style.overflow = '';
+	}, 350);
+}
+
+async function openCreateLiveSessionUI() {
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return;
+
+	const localKey = `user_profile_${user.id}`;
+	let profile = null;
+	try { profile = JSON.parse(localStorage.getItem(localKey)); } catch (e) { }
+
+	if (!profile || !profile.preferred_locations || profile.preferred_locations.length === 0) {
+		alert("Lütfen önce profilinizde tercih ettiğiniz konumları belirleyin.");
+		return;
+	}
+
+	const citySelect = document.getElementById('liveCitySelect');
+	const districtSelect = document.getElementById('liveDistrictSelect');
+
+	citySelect.innerHTML = '<option value="" disabled selected>Şehir Seçin</option>';
+
+	const userCities = new Set();
+	profile.preferred_locations.forEach(loc => userCities.add(loc.split(',')[0].trim()));
+
+	userCities.forEach(city => {
+		const opt = document.createElement('option');
+		opt.value = city;
+		opt.innerText = city;
+		citySelect.appendChild(opt);
+	});
+
+	citySelect.onchange = () => {
+		const city = citySelect.value;
+		districtSelect.innerHTML = '<option value="" disabled selected>İlçe Seçin</option>';
+		if (districtsMap[city]) {
+			const allOpt = document.createElement('option');
+			allOpt.value = "Bütün Şehir";
+			allOpt.innerText = "Bütün Şehir";
+			districtSelect.appendChild(allOpt);
+
+			districtsMap[city].forEach(district => {
+				const opt = document.createElement('option');
+				opt.value = district;
+				opt.innerText = district;
+				districtSelect.appendChild(opt);
+			});
+			districtSelect.disabled = false;
+		} else {
+			districtSelect.disabled = true;
+		}
+	};
+
+	document.getElementById('liveDrinkTimeInput').value = '';
+	document.getElementById('liveNoteInput').value = '';
+	document.body.style.overflow = 'hidden';
+	const modal = document.getElementById('createLiveSessionModal');
+	modal.style.display = 'flex';
+	setTimeout(() => { modal.classList.add('active'); }, 10);
+}
+
+async function createLiveSession(city, district, note, drinkTime) {
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return;
+
+	const { data: hasSession } = await supabase.rpc('has_recent_session', { p_user_id: user.id });
+	if (hasSession) {
+		alert("Zaten bir ilan açtın. Aynı kullanıcı 12 saat içinde yeni ilan açamaz.");
+		return;
+	}
+
+	const sanitizedNote = note.replace(/<[^>]*>?/gm, '').trim().substring(0, 50);
+	const sanitizedDrinkTime = drinkTime.replace(/<[^>]*>?/gm, '').trim().substring(0, 100);
+	const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+
+	const { error } = await supabase.from('live_sessions').insert({
+		user_id: user.id,
+		city,
+		district,
+		note: sanitizedNote || null,
+		drink_time: sanitizedDrinkTime || null,
+		expires_at: expiresAt
+	});
+
+	if (error) {
+		alert("İlan oluşturulurken bir hata oluştu: " + error.message);
+	} else {
+		closeCustomModal('createLiveSessionModal');
+		loadMapData();
+	}
+}
+
+async function deleteLiveSession(sessionId) {
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return;
+
+	const { error } = await supabase.from('live_sessions')
+		.delete()
+		.eq('id', sessionId)
+		.eq('user_id', user.id);
+
+	if (error) {
+		alert("İlan silinirken bir hata oluştu: " + error.message);
+	} else {
+		closeCustomModal('liveSessionModal');
+		loadMapData();
+	}
+}
+
+async function openLiveSessionModal(session) {
+	const { data: { user } } = await supabase.auth.getUser();
+	const isCurrentUser = user && user.id === session.user_id;
+
+	document.getElementById('liveSessionAvatar').src = session.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+	document.getElementById('liveSessionDisplayName').innerText = session.display_name || '';
+	document.getElementById('liveSessionNickname').innerText = session.nickname ? `@${session.nickname}` : '';
+
+	document.getElementById('liveSessionLocation').innerText = `${session.city}, ${session.district}`;
+	document.getElementById('liveSessionDrinkTime').innerText = session.drink_time ? `Zaman: ${session.drink_time}` : '';
+	document.getElementById('liveSessionNote').innerText = session.note ? `"${session.note}"` : '';
+
+	const createdDate = new Date(session.created_at);
+	const diffMins = Math.floor((Date.now() - createdDate) / 60000);
+	let timeAgoStr = diffMins < 60 ? `${diffMins} dakika önce` : `${Math.floor(diffMins / 60)} saat önce`;
+	document.getElementById('liveSessionTimeAgo').innerText = `Oluşturuldu: ${timeAgoStr}`;
+
+	const expiresDate = new Date(session.expires_at);
+	const expiresDiffMins = Math.floor((expiresDate - Date.now()) / 60000);
+	if (expiresDiffMins > 0) {
+		const hours = Math.floor(expiresDiffMins / 60);
+		const mins = expiresDiffMins % 60;
+		document.getElementById('liveSessionExpiresIn').innerText = `${hours} saat ${mins} dakika sonra silinecek`;
+	} else {
+		document.getElementById('liveSessionExpiresIn').innerText = `Süresi doldu`;
+	}
+
+	const deleteBtn = document.getElementById('deleteLiveSessionBtn');
+	if (isCurrentUser) {
+		deleteBtn.style.display = 'inline-block';
+		deleteBtn.setAttribute('data-session-id', session.id);
+	} else {
+		deleteBtn.style.display = 'none';
+	}
+
+	document.body.style.overflow = 'hidden';
+	const modal = document.getElementById('liveSessionModal');
+	modal.style.display = 'flex';
+	setTimeout(() => { modal.classList.add('active'); }, 10);
+}
+
+function renderLivePins(sessions, cityId) {
+	const mapContainer = document.getElementById(`mapAvatarsContainer-${cityId}`);
+	const svgEl = document.getElementById(`svg-${cityId}`);
+	if (!mapContainer || !svgEl) return;
+	mapContainer.innerHTML = '';
+
+	const cityObj = CITIES.find(c => c.id === cityId);
+	if (!cityObj) return;
+
+	const totalCounter = document.getElementById(`cityTotal-${cityId}`);
+	if (totalCounter) totalCounter.innerText = sessions.length;
+
+	if (sessions.length === 0) return;
+
+	const viewBox = cityObj.viewBoxObj;
+	const center = cityObj.center;
+	const maxRadius = cityObj.radius;
+
+	const paths = Array.from(svgEl.querySelectorAll('path'));
+	function isInsideLand(x, y) {
+		if (paths.length === 0) return true;
+		const pt = svgEl.createSVGPoint();
+		pt.x = x; pt.y = y;
+		return paths.some(p => p.isPointInFill(pt));
+	}
+
+	const GOLDEN_ANGLE = 137.508;
+	let seq = 0;
+
+	sessions.forEach(session => {
+		let svgX, svgY, found = false, attempts = 0;
+
+		while (!found && attempts < 1000) {
+			const t = seq / Math.max(sessions.length, 5);
+			const r = maxRadius * Math.sqrt(t) * 0.75;
+			const angleRad = (seq * GOLDEN_ANGLE * Math.PI) / 180;
+			svgX = center.x + r * Math.cos(angleRad);
+			svgY = center.y + r * Math.sin(angleRad);
+			if (isInsideLand(svgX, svgY)) found = true;
+			seq++; attempts++;
+		}
+		if (!found) { svgX = center.x; svgY = center.y; }
+
+		const leftPercent = ((svgX - viewBox.x) / viewBox.w) * 100;
+		const topPercent = ((svgY - viewBox.y) / viewBox.h) * 100;
+
+		const pin = document.createElement('div');
+		pin.className = 'map-user-pin live-pin';
+		pin.style.left = `${leftPercent}%`;
+		pin.style.top = `${topPercent}%`;
+		pin.setAttribute('data-name', session.display_name);
+
+		pin.addEventListener('click', () => openLiveSessionModal(session));
+
+		const img = document.createElement('img');
+		img.className = 'map-user-avatar';
+		img.src = session.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		img.alt = session.display_name;
+
+		const liveDot = document.createElement('div');
+		liveDot.className = 'live-dot';
+
+		pin.appendChild(img);
+		pin.appendChild(liveDot);
+		mapContainer.appendChild(pin);
+	});
+}
+
+
