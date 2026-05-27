@@ -780,7 +780,14 @@ function initMap() {
 									<span class="slider round disabled"></span>
 								</label>
 							</div>
-							<button class="btn-map-action" id="btnExplore-${city.id}"></button>
+							<div style="display: flex; gap: 8px; align-items: center;">
+								<button class="btn-map-action" id="btnExplore-${city.id}"></button>
+								<button class="btn-map-refresh" id="btnRefresh-${city.id}" title="Haritayı Yenile">
+									<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+									</svg>
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -794,6 +801,14 @@ function initMap() {
 			if (btnExplore) {
 				btnExplore.innerText = `${city.name}${city.exploreSuffix}`;
 				btnExplore.addEventListener('click', () => openDrinkersModal(city.id));
+			}
+			const btnRefresh = document.getElementById(`btnRefresh-${city.id}`);
+			if (btnRefresh) {
+				btnRefresh.addEventListener('click', () => {
+					localStorage.removeItem('mapUsersCacheV3');
+					localStorage.removeItem('mapUsersCacheTimeV3');
+					location.reload();
+				});
 			}
 		});
 	}
