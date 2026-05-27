@@ -80,7 +80,7 @@ header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 20px 40px;
+	padding: 10px 40px;
 	border-bottom: 1px solid #f0f0f0;
 	background: rgba(255, 255, 255, 0.8);
 	position: sticky;
@@ -104,38 +104,27 @@ header {
 	font-size: 2.6rem;
 	font-weight: 800;
 	letter-spacing: -0.6px;
-	color: #101010;
+	color: #1c1c1c;
 	/* Beyaz metin */
 	position: relative;
 	z-index: 5;
-	transition: text-shadow 0.3s ease, transform 0.3s ease, color 0.3s ease;
-	/* Kırmızı alevimsi gölge - Sol, sağ ve alt genişletildi */
-	text-shadow:
-		0 0 12px rgba(255, 30, 0, 1),
-		-4px 4px 18px rgba(255, 30, 0, 0.8),
-		4px 4px 18px rgba(255, 30, 0, 0.8),
-		0 -4px 20px rgba(255, 0, 0, 0.7);
+	transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .logo-container:hover .logo {
 	/* color: #ffffff; */
 	transform: scale(1.03);
-	text-shadow:
-		0 0 18px rgba(255, 30, 0, 1),
-		-6px 6px 24px rgba(255, 30, 0, 0.9),
-		6px 6px 24px rgba(255, 30, 0, 0.9),
-		0 -6px 28px rgba(255, 0, 0, 0.8);
 }
 
+/* --- Eski Fire Efekti (CSS Particles) --- */
+/*
 .fire {
 	position: absolute;
 	bottom: 8px;
 	left: 2px;
 	width: calc(100% - 4px);
 	height: 40px;
-	/* Base container for particles */
 	font-size: 11px;
-	/* Base scaling unit (em) */
 	filter: blur(3px);
 	-webkit-filter: blur(3px);
 	pointer-events: none;
@@ -176,6 +165,20 @@ header {
 		opacity: 0;
 		transform: translateY(-80px) scale(0.15) rotate(120deg);
 	}
+}
+*/
+
+/* Yeni Fire Efekti (GIF) */
+.fire {
+	position: absolute;
+	bottom: -1px;
+	left: -4px;
+	width: calc(100% + 8px);
+	height: 500px;
+	background: url('../assets/fire2.gif') center bottom no-repeat;
+	background-size: contain;
+	pointer-events: none;
+	z-index: 1;
 }
 
 .btn-twitter {
@@ -274,8 +277,8 @@ header {
 	.fire {
 		font-size: 8px;
 		/* Scaled down fire base unit */
-		bottom: 6px;
-		height: 30px;
+		bottom: 0px;
+		height: 500px;
 	}
 
 	.btn-twitter {
@@ -594,7 +597,8 @@ header {
 
 .form-input {
 	width: 100%;
-	padding: 14px 18px 28px 18px; /* Alt boşluk sayaca göre ayarlandı */
+	padding: 14px 18px 28px 18px;
+	/* Alt boşluk sayaca göre ayarlandı */
 	border: 2px solid var(--border-color);
 	border-radius: 16px;
 	font-size: 15px;

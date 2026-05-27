@@ -670,7 +670,8 @@ if (logoutBtnModal) {
 		logoutBtn.click();
 	});
 }
-// Fire Effect Particles Generation
+// Fire Effect Particles Generation (CSS Particle iptal edildi, fire.gif kullanılıyor)
+/*
 document.addEventListener('DOMContentLoaded', () => {
 	const fireContainer = document.getElementById('fire');
 	if (fireContainer) {
@@ -689,6 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 });
+*/
 
 // --- Map Integration for Istanbul, Ankara, Izmir, Eskisehir ---
 
