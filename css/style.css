@@ -995,4 +995,270 @@ header {
 	}
 }
 
+/* Istanbul Map Styles */
+.map-section {
+	max-width: 600px;
+	margin: 24px auto;
+	padding: 12px 16px;
+	text-align: center;
+}
 
+.map-title-container {
+	margin-bottom: 18px;
+}
+
+.map-title-container h2 {
+	font-family: 'SF Pro Rounded', sans-serif;
+	font-size: 24px;
+	font-weight: 900;
+	color: var(--text-color);
+	letter-spacing: -0.5px;
+}
+
+.map-title-container p {
+	font-size: 14.5px;
+	color: var(--secondary-text);
+	margin-top: 4px;
+}
+
+.map-wrapper {
+	position: relative;
+	width: 100%;
+	background: transparent;
+	border: none;
+	padding: 0;
+	margin: 0 auto;
+}
+
+#svg-istanbul {
+	width: 100%;
+	height: auto;
+	max-height: 380px;
+	display: block;
+}
+
+.istanbul-map-group path {
+	fill: #e7e5e4;
+	stroke: #ffffff;
+	stroke-width: 0.75px;
+	transition: fill 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.istanbul-map-group path:hover {
+	fill: #d6d3d1;
+}
+
+.map-avatars-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.map-user-pin {
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	margin-left: -16px;
+	margin-top: -16px;
+	pointer-events: auto;
+	cursor: pointer;
+	z-index: 10;
+	transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.map-user-pin:hover {
+	transform: scale(1.2) !important;
+	z-index: 999;
+}
+
+.map-user-avatar {
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	border: none;
+	background-color: #ffffff;
+	object-fit: cover;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+	display: block;
+}
+
+/* Pulsing Live Effect */
+.map-user-pin.pulse::before {
+	content: '';
+	position: absolute;
+	top: -6px;
+	left: -6px;
+	right: -6px;
+	bottom: -6px;
+	border-radius: 50%;
+	border: 2px solid var(--accent-color);
+	animation: pinPulse 1.5s infinite ease-out;
+	pointer-events: none;
+	z-index: -1;
+}
+
+@keyframes pinPulse {
+	0% {
+		transform: scale(0.85);
+		opacity: 0.9;
+	}
+	100% {
+		transform: scale(1.65);
+		opacity: 0;
+	}
+}
+
+/* Tooltip for user names */
+.map-user-pin::after {
+	content: attr(data-name);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%) translateY(-8px);
+	background: #1c1917;
+	color: #ffffff;
+	padding: 6px 10px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.18s ease, transform 0.18s ease;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+	z-index: 1000;
+}
+
+.map-user-pin:hover::after {
+	opacity: 1;
+	transform: translateX(-50%) translateY(-4px);
+}
+
+/* Action Buttons Container */
+.map-actions {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	margin-top: 16px;
+}
+
+.btn-map-action {
+	padding: 10px 20px;
+	border: 2px solid var(--border-color);
+	background-color: var(--bg-color);
+	color: var(--text-color);
+	font-size: 14.5px;
+	font-weight: 700;
+	border-radius: 9999px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.btn-map-action:hover {
+	border-color: #cfd9de;
+	background-color: #f5f5f4;
+}
+
+.btn-map-action.active {
+	background-color: #1c1917;
+	color: #ffffff;
+	border-color: #1c1917;
+}
+
+.btn-map-action.active:hover {
+	background-color: #33302e;
+	border-color: #33302e;
+}
+
+.btn-map-action:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+/* Preload/onboarding hiding rules */
+.preload-needs-onboarding #mapSection {
+	display: none !important;
+}
+
+@media (max-width: 600px) {
+	.map-section {
+		margin: 16px auto;
+		padding: 8px 12px;
+	}
+	.map-title-container h2 {
+		font-size: 20px;
+	}
+	.map-wrapper {
+		padding: 0;
+		border-radius: 0;
+	}
+	.map-user-pin {
+		width: 28px;
+		height: 28px;
+		margin-left: -14px;
+		margin-top: -14px;
+	}
+	.btn-map-action {
+		padding: 8px 16px;
+		font-size: 13.5px;
+	}
+}
+
+/* Drinkers List Styles */
+.drinkers-list-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.drinker-item {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 12px 16px;
+	border-radius: 16px;
+	background-color: #fafaf9;
+	border: 1px solid var(--border-color);
+	transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.drinker-item:hover {
+	background-color: #f5f5f4;
+}
+
+.drinker-avatar-wrapper {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	overflow: hidden;
+	background-color: #e7e5e4;
+	flex-shrink: 0;
+}
+
+.drinker-avatar {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.drinker-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.drinker-name {
+	font-weight: 700;
+	font-size: 15px;
+	color: var(--text-color);
+}
+
+.drinker-location {
+	font-size: 13px;
+	color: var(--secondary-text);
+}

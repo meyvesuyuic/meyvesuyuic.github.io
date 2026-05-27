@@ -71,6 +71,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'flex';
 			userContainer.style.display = 'none';
 			document.getElementById('setupScreen').style.display = 'none';
+			if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
 			return;
 		}
 
@@ -94,6 +95,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 					loginBtn.style.display = 'none';
 					userContainer.style.display = 'flex';
 					document.getElementById('setupScreen').style.display = 'none';
+					if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
 					return;
 				}
 			} catch (e) {
@@ -117,12 +119,14 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
+			if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
 		} else {
 			// Onboard edilmemiş veya kaydı yok!
 			console.log("Kullanıcı kurulum ekranını tamamlamamış. Setup ekranı açılıyor.");
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex'; // Profil bilgilerinin görünmesi için
 			document.getElementById('setupScreen').style.display = 'flex';
+			if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'none';
 
 			const metadata = user.user_metadata;
 			let betterAvatar = metadata.avatar_url ? metadata.avatar_url.replace('_normal', '_400x400') : '';
@@ -152,6 +156,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		loginBtn.style.display = 'flex';
 		userContainer.style.display = 'none';
 		document.getElementById('setupScreen').style.display = 'none';
+		if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
 		userName.innerText = '';
 		userAvatar.src = '';
 	}
@@ -428,6 +433,9 @@ function initSetupLogic(user, twitterData) {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
+			if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
+			// Refresh map with the new user
+			loadMapData();
 		}
 	};
 }
@@ -586,6 +594,200 @@ if (profileModalOverlay) {
 	profileModalOverlay.addEventListener('click', closeProfileModal);
 }
 if (logoutBtnModal) {
+		const { error } = await supabase
+			.from('profiles')
+			.update(updateData)
+			.eq('id', user.id);
+
+		if (error) {
+			alert("Profil kurulumu tamamlanÄ±rken bir hata oluÅŸtu: " + error.message);
+		} else {
+			console.log("Kurulum baÅŸarÄ±yla tamamlandÄ±.");
+
+			// Yerel Ã¶nbelleÄŸe kaydet
+			const localKey = `user_profile_${user.id}`;
+			const localData = {
+				display_name: twitterData.display_name,
+				nickname: twitterData.nickname,
+				avatar_url: twitterData.avatar_url,
+				is_onboarded: true,
+				favorite_styles: selectedBeerStyles,
+				other_alcohols: selectedOtherAlcohols,
+				preferred_locations: selectedLocations,
+				drinking_frequency: getPillValue('frequencyGroup'),
+				drinking_environment: environment,
+				abv_preference: abv,
+				drinking_snack: snack
+			};
+			localStorage.setItem(localKey, JSON.stringify(localData));
+
+			// Arayüzü güncelle
+			userName.innerText = twitterData.display_name;
+			userAvatar.src = twitterData.avatar_url;
+			loginBtn.style.display = 'none';
+			userContainer.style.display = 'flex';
+			document.getElementById('setupScreen').style.display = 'none';
+			if (document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
+			// Refresh map with the new user
+			loadMapData();
+		}
+	};
+}
+
+// Profil modalÄ±nÄ± aÃ§ma
+async function openProfileModal(user) {
+	if (!user) return;
+	const localKey = `user_profile_${user.id}`;
+	let profileData = null;
+	const cachedProfile = localStorage.getItem(localKey);
+	
+	if (cachedProfile) {
+		try {
+			profileData = JSON.parse(cachedProfile);
+		} catch (e) {}
+	}
+	
+	// EÄŸer Ã¶nbellek eksikse veritabanÄ±ndan Ã§ekelim
+	if (!profileData || !profileData.favorite_styles) {
+		const { data, error } = await supabase
+			.from('profiles')
+			.select('is_onboarded, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
+			.eq('id', user.id)
+			.maybeSingle();
+			
+		if (!error && data) {
+			profileData = data;
+			localStorage.setItem(localKey, JSON.stringify(data));
+		}
+	}
+	
+	if (!profileData) return;
+	
+	// Bilgileri yerleÅŸtir
+	profileAvatarLarge.src = profileData.avatar_url || '';
+	profileDisplayName.innerText = profileData.display_name || '';
+	profileNickname.innerText = profileData.nickname ? `@${profileData.nickname}` : '';
+	
+	// Twitter profil butonu ayarÄ±
+	if (twitterProfileLink && profileActionWrapper) {
+		if (profileData.nickname) {
+			profileActionWrapper.style.display = 'block';
+			twitterProfileLink.onclick = (e) => {
+				e.preventDefault();
+				const nickname = profileData.nickname;
+				const twitterUrl = `https://x.com/${nickname}`;
+				const twitterAppUrl = `twitter://user?screen_name=${nickname}`;
+				
+				const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+				if (isMobile) {
+					const start = Date.now();
+					window.location.href = twitterAppUrl;
+					
+					setTimeout(() => {
+						if (Date.now() - start < 2000) {
+							window.open(twitterUrl, '_blank');
+						}
+					}, 1500);
+				} else {
+					window.open(twitterUrl, '_blank');
+				}
+			};
+		} else {
+			profileActionWrapper.style.display = 'none';
+		}
+	}
+	
+	// Konumlar
+	prefLocations.innerHTML = '';
+	if (profileData.preferred_locations && profileData.preferred_locations.length > 0) {
+		profileData.preferred_locations.forEach(loc => {
+			const span = document.createElement('span');
+			span.className = 'pref-tag';
+			span.innerText = loc;
+			prefLocations.appendChild(span);
+		});
+	} else {
+		prefLocations.innerHTML = '<span class="pref-tag">BelirtilmemiÅŸ</span>';
+	}
+	
+	// Bira TarzlarÄ±
+	prefBeerStyles.innerHTML = '';
+	if (profileData.favorite_styles && profileData.favorite_styles.length > 0) {
+		profileData.favorite_styles.forEach(style => {
+			const span = document.createElement('span');
+			span.className = 'pref-tag';
+			span.innerText = style;
+			prefBeerStyles.appendChild(span);
+		});
+	} else {
+		prefBeerStyles.innerHTML = '<span class="pref-tag">BelirtilmemiÅŸ</span>';
+	}
+	
+	// DiÄŸer Alkoller
+	prefOtherAlcohols.innerHTML = '';
+	
+	const alcoholColors = {
+		"RakÄ±": { bg: "#e0f2fe", border: "#0ea5e9", color: "#0369a1" },
+		"Åžarap": { bg: "#ffe4e6", border: "#f43f5e", color: "#be185d" },
+		"Viski": { bg: "#fef3c7", border: "#f59e0b", color: "#b45309" },
+		"Cin": { bg: "#d1fae5", border: "#10b981", color: "#047857" },
+		"Votka": { bg: "#f1f5f9", border: "#64748b", color: "#475569" },
+		"Tekila": { bg: "#fef9c3", border: "#eab308", color: "#a16207" },
+		"Kokteyl": { bg: "#f3e8ff", border: "#a855f7", color: "#6d28d9" },
+		"Ä°Ã§miyorum": { bg: "#f5f5f4", border: "#78716c", color: "#57504b" }
+	};
+	
+	if (profileData.other_alcohols && profileData.other_alcohols.length > 0) {
+		profileData.other_alcohols.forEach(alc => {
+			const span = document.createElement('span');
+			span.className = 'pref-tag';
+			span.innerText = alc;
+			
+			// Her alkol seÃ§eneÄŸi iÃ§in pastel renk setini uygula
+			if (alcoholColors[alc]) {
+				span.style.backgroundColor = alcoholColors[alc].bg;
+				span.style.borderColor = alcoholColors[alc].border;
+				span.style.color = alcoholColors[alc].color;
+				span.style.fontWeight = '600';
+			}
+			
+			prefOtherAlcohols.appendChild(span);
+		});
+	} else {
+		prefOtherAlcohols.innerHTML = '<span class="pref-tag">BelirtilmemiÅŸ</span>';
+	}
+	
+	// Tekli seÃ§im deÄŸerleri
+	prefFrequency.innerText = profileData.drinking_frequency || '-';
+	prefEnvironment.innerText = profileData.drinking_environment || '-';
+	prefAbv.innerText = profileData.abv_preference || '-';
+	prefSnack.innerText = profileData.drinking_snack || '-';
+	
+	// ModalÄ± gÃ¶ster
+	document.body.style.overflow = 'hidden';
+	profileModal.style.display = 'flex';
+	setTimeout(() => {
+		profileModal.classList.add('active');
+	}, 10);
+}
+
+// Profil modalÄ±nÄ± kapatma
+function closeProfileModal() {
+	profileModal.classList.remove('active');
+	setTimeout(() => {
+		profileModal.style.display = 'none';
+		document.body.style.overflow = '';
+	}, 350);
+}
+
+// Olay dinleyicilerini baÄŸlayalÄ±m
+if (closeProfileBtn) {
+	closeProfileBtn.addEventListener('click', closeProfileModal);
+}
+if (profileModalOverlay) {
+	profileModalOverlay.addEventListener('click', closeProfileModal);
+}
+if (logoutBtnModal) {
 	logoutBtnModal.addEventListener('click', () => {
 		closeProfileModal();
 		logoutBtn.click();
@@ -611,3 +813,228 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 });
 
+// --- Istanbul Map Integration ---
+
+const districtCoords = {
+	"Silivri": { x: 130, y: 55 },
+	"Çatalca": { x: 145, y: 48 },
+	"Büyükçekmece": { x: 155, y: 62 },
+	"Arnavutköy": { x: 162, y: 45 },
+	"Esenyurt": { x: 165, y: 60 },
+	"Beylikdüzü": { x: 160, y: 65 },
+	"Avcılar": { x: 168, y: 65 },
+	"Başakşehir": { x: 172, y: 52 },
+	"Küçükçekmece": { x: 174, y: 64 },
+	"Bağcılar": { x: 177, y: 61 },
+	"Bahçelievler": { x: 176, y: 65 },
+	"Bakırköy": { x: 176, y: 68 },
+	"Güngören": { x: 179, y: 63 },
+	"Esenler": { x: 178, y: 58 },
+	"Zeytinburnu": { x: 181, y: 67 },
+	"Sultangazi": { x: 180, y: 48 },
+	"Gaziosmanpaşa": { x: 181, y: 54 },
+	"Eyüp": { x: 180, y: 44 },
+	"Fatih": { x: 184, y: 68 },
+	"Kağıthane": { x: 184, y: 56 },
+	"Şişli": { x: 185, y: 60 },
+	"Beyoğlu": { x: 185, y: 64 },
+	"Beşiktaş": { x: 187, y: 63 },
+	"Sarıyer": { x: 188, y: 48 },
+
+	"Üsküdar": { x: 191, y: 69 },
+	"Kadıköy": { x: 192, y: 74 },
+	"Ataşehir": { x: 196, y: 72 },
+	"Beykoz": { x: 196, y: 55 },
+	"Ümraniye": { x: 195, y: 66 },
+	"Çekmeköy": { x: 200, y: 64 },
+	"Sancaktepe": { x: 201, y: 72 },
+	"Maltepe": { x: 198, y: 78 },
+	"Kartal": { x: 202, y: 81 },
+	"Sultanbeyli": { x: 205, y: 74 },
+	"Pendik": { x: 208, y: 78 },
+	"Tuzla": { x: 214, y: 85 },
+	"Şile": { x: 216, y: 60 },
+	"Adalar": { x: 196, y: 86 },
+	
+	"Bütün Şehir": { x: 185, y: 58 }
+};
+
+let currentMapUsers = [];
+
+async function loadMapData() {
+	const mapContainer = document.getElementById('mapAvatarsContainer');
+	if (!mapContainer) return;
+
+	try {
+		console.log("Fetching map users from Supabase...");
+		// Fetch up to 100 onboarded users, sorted by latest updates
+		const { data, error } = await supabase
+			.from('profiles')
+			.select('id, display_name, avatar_url, preferred_locations')
+			.eq('is_onboarded', true)
+			.order('updated_at', { ascending: false })
+			.limit(100);
+
+		if (error) throw error;
+
+		if (data) {
+			currentMapUsers = [];
+			data.forEach(profile => {
+				if (profile.preferred_locations && Array.isArray(profile.preferred_locations)) {
+					profile.preferred_locations.forEach(loc => {
+						if (loc.startsWith('İstanbul,') || loc.startsWith('Istanbul,')) {
+							const dist = loc.split(',')[1].trim();
+							currentMapUsers.push({
+								id: profile.id,
+								display_name: profile.display_name,
+								avatar_url: profile.avatar_url,
+								district: dist
+							});
+						}
+					});
+				}
+			});
+
+			renderMapUsers(currentMapUsers);
+		}
+	} catch (err) {
+		console.error("Error loading map users:", err.message);
+	}
+}
+
+function renderMapUsers(users) {
+	const mapContainer = document.getElementById('mapAvatarsContainer');
+	if (!mapContainer) return;
+	mapContainer.innerHTML = '';
+
+	// Group users by their district coordinates key
+	const coordsGroups = {};
+
+	users.forEach(user => {
+		const coords = districtCoords[user.district] || districtCoords["Bütün Şehir"];
+		const key = `${coords.x}_${coords.y}`;
+		
+		if (!coordsGroups[key]) {
+			coordsGroups[key] = {
+				coords: coords,
+				users: []
+			};
+		}
+		coordsGroups[key].users.push(user);
+	});
+
+	// Render pins
+	Object.keys(coordsGroups).forEach(key => {
+		const group = coordsGroups[key];
+		const coords = group.coords;
+		const groupUsers = group.users;
+		const count = groupUsers.length;
+
+		// Convert SVG coordinates to percentages of viewBox (119.881 34.497 106.166 64.114)
+		const leftPercent = ((coords.x - 119.881) / 106.166) * 100;
+		const topPercent = ((coords.y - 34.497) / 64.114) * 100;
+
+		groupUsers.forEach((user, index) => {
+			let dx = 0;
+			let dy = 0;
+
+			if (count > 1) {
+				// Radial clustering offset around the center point
+				const angle = (index * 2 * Math.PI) / count;
+				const radius = Math.min(8 + count * 1.5, 16); // small pixel radius spread
+				dx = Math.cos(angle) * radius;
+				dy = Math.sin(angle) * radius;
+			}
+
+			const pin = document.createElement('div');
+			pin.className = 'map-user-pin';
+			pin.style.left = `${leftPercent}%`;
+			pin.style.top = `${topPercent}%`;
+			pin.style.transform = `translate(${dx}px, ${dy}px)`;
+			pin.setAttribute('data-name', `${user.display_name} (${user.district})`);
+
+			const img = document.createElement('img');
+			img.className = 'map-user-avatar';
+			img.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+			img.alt = user.display_name;
+
+			img.onerror = () => {
+				img.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+			};
+
+			pin.appendChild(img);
+			mapContainer.appendChild(pin);
+		});
+	});
+}
+
+// Drinkers Bottom Sheet Modal Handlers
+function openDrinkersModal() {
+	const modal = document.getElementById('drinkersModal');
+	const container = document.getElementById('drinkersListContainer');
+	if (!modal || !container) return;
+
+	container.innerHTML = '';
+	
+	if (currentMapUsers.length === 0) {
+		container.innerHTML = '<p style="text-align: center; color: var(--secondary-text); margin-top: 20px;">Henüz İstanbul\'da kayıtlı birasever bulunmuyor.</p>';
+	} else {
+		currentMapUsers.forEach(user => {
+			const item = document.createElement('div');
+			item.className = 'drinker-item';
+			item.innerHTML = `
+				<div class="drinker-avatar-wrapper">
+					<img class="drinker-avatar" src="${user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}" alt="${user.display_name}">
+				</div>
+				<div class="drinker-info">
+					<span class="drinker-name">${user.display_name}</span>
+					<span class="drinker-location">${user.district}</span>
+				</div>
+			`;
+			
+			// Handle broken image
+			item.querySelector('.drinker-avatar').onerror = (e) => {
+				e.target.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+			};
+			
+			container.appendChild(item);
+		});
+	}
+
+	// Show modal
+	document.body.style.overflow = 'hidden';
+	modal.style.display = 'flex';
+	setTimeout(() => {
+		modal.classList.add('active');
+	}, 10);
+}
+
+function closeDrinkersModal() {
+	const modal = document.getElementById('drinkersModal');
+	if (!modal) return;
+
+	modal.classList.remove('active');
+	setTimeout(() => {
+		modal.style.display = 'none';
+		document.body.style.overflow = '';
+	}, 350);
+}
+
+// Bind Map Buttons and Load Map on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+	const btnExplore = document.getElementById('btnExploreIstanbul');
+	const closeBtn = document.getElementById('closeDrinkersBtn');
+	const overlay = document.getElementById('drinkersModalOverlay');
+
+	if (btnExplore) {
+		btnExplore.addEventListener('click', openDrinkersModal);
+	}
+	if (closeBtn) {
+		closeBtn.addEventListener('click', closeDrinkersModal);
+	}
+	if (overlay) {
+		overlay.addEventListener('click', closeDrinkersModal);
+	}
+
+	loadMapData();
+});
