@@ -71,7 +71,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'flex';
 			userContainer.style.display = 'none';
 			document.getElementById('setupScreen').style.display = 'none';
-			document.getElementById('dashboardScreen').style.display = 'none';
 			return;
 		}
 
@@ -95,7 +94,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 					loginBtn.style.display = 'none';
 					userContainer.style.display = 'flex';
 					document.getElementById('setupScreen').style.display = 'none';
-					document.getElementById('dashboardScreen').style.display = 'block';
 					return;
 				}
 			} catch (e) {
@@ -119,14 +117,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
-			document.getElementById('dashboardScreen').style.display = 'block';
 		} else {
 			// Onboard edilmemiş veya kaydı yok!
 			console.log("Kullanıcı kurulum ekranını tamamlamamış. Setup ekranı açılıyor.");
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex'; // Profil bilgilerinin görünmesi için
 			document.getElementById('setupScreen').style.display = 'flex';
-			document.getElementById('dashboardScreen').style.display = 'none';
 
 			const metadata = user.user_metadata;
 			let betterAvatar = metadata.avatar_url ? metadata.avatar_url.replace('_normal', '_400x400') : '';
@@ -156,7 +152,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		loginBtn.style.display = 'flex';
 		userContainer.style.display = 'none';
 		document.getElementById('setupScreen').style.display = 'none';
-		document.getElementById('dashboardScreen').style.display = 'none';
 		userName.innerText = '';
 		userAvatar.src = '';
 	}
@@ -433,7 +428,6 @@ function initSetupLogic(user, twitterData) {
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
 			document.getElementById('setupScreen').style.display = 'none';
-			document.getElementById('dashboardScreen').style.display = 'block';
 		}
 	};
 }
