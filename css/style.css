@@ -1024,6 +1024,7 @@ header {
 .map-wrapper {
 	position: relative;
 	width: 100%;
+	aspect-ratio: 106.166 / 64.114;
 	background: transparent;
 	border: none;
 	padding: 0;
@@ -1032,8 +1033,7 @@ header {
 
 #svg-istanbul {
 	width: 100%;
-	height: auto;
-	max-height: 380px;
+	height: 100%;
 	display: block;
 }
 
