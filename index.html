@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<title>bira.</title>
-	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="./css/style.css">
 	<script>
 		// Sayfa yüklenirken "Giriş Yap" butonunun 1 saniye görünüp kaybolmasını (flicker) önlemek için
 		// Supabase SDK'sı yüklenmeden önce localStorage durumunu senkronize olarak kontrol ediyoruz:
@@ -120,7 +120,8 @@
 				<div class="form-group">
 					<label>Biyografi (Kendinden bahset)</label>
 					<div class="textarea-wrapper">
-						<textarea id="bioInput" class="form-input" maxlength="100" rows="3" placeholder="Kendini kısaca anlat..."></textarea>
+						<textarea id="bioInput" class="form-input" maxlength="100" rows="3"
+							placeholder="Kendini kısaca anlat..."></textarea>
 						<span class="char-count" id="bioCharCount">0/100</span>
 					</div>
 				</div>
@@ -300,7 +301,7 @@
 		</div>
 	</div>
 
-	<script type="module" src="/js/app.js"></script>
+	<script type="module" src="./js/app.js"></script>
 </body>
 
 </html>
