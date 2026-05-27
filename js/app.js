@@ -751,6 +751,7 @@ const MAP_CACHE_DURATION = 5 * 60 * 1000; // 5 dakika (milisaniye cinsinden)
 
 function initMap() {
 	const mapSection = document.getElementById('mapSection');
+	const mapSectionHeader = document.getElementById('mapSectionHeader');
 	if (!mapSection) return;
 
 	if (mapSection.innerHTML === '') {
@@ -758,7 +759,7 @@ function initMap() {
 		CITIES.forEach(city => {
 			htmlContent += `
 				<div class="city-container" id="cityContainer-${city.id}">
-					<h3 class="city-map-title">${city.name}</h3>
+					<div class="city-badge">${city.name}</div>
 					<div class="map-wrapper map-wrapper-${city.id}" id="mapWrapper-${city.id}">
 						<svg version="1.1" id="svg-${city.id}" xmlns="http://www.w3.org/2000/svg" viewBox="${city.viewBox}">
 							<g id="${city.id}-paths" class="istanbul-map-group">
@@ -767,9 +768,20 @@ function initMap() {
 						</svg>
 						<div class="map-avatars-container" id="mapAvatarsContainer-${city.id}"></div>
 					</div>
-					<div class="map-actions">
-						<button class="btn-map-action" id="btnExplore-${city.id}"></button>
-						<button class="btn-map-action" id="btnActiveDrinkers-${city.id}" disabled>Anlık İçicilere Bak</button>
+					<div class="city-footer">
+						<div class="city-stats" id="cityStats-${city.id}">
+							Toplam <strong id="cityTotal-${city.id}">0</strong> kullanıcı
+						</div>
+						<div class="city-controls">
+							<div class="toggle-switch-wrapper" title="Şu an yapım aşamasında">
+								<span class="toggle-label">Anlık</span>
+								<label class="switch">
+									<input type="checkbox" id="toggleActive-${city.id}" disabled>
+									<span class="slider round disabled"></span>
+								</label>
+							</div>
+							<button class="btn-map-action" id="btnExplore-${city.id}"></button>
+						</div>
 					</div>
 				</div>
 			`;
@@ -786,6 +798,7 @@ function initMap() {
 		});
 	}
 	mapSection.style.display = 'block';
+	if (mapSectionHeader) mapSectionHeader.style.display = 'block';
 }
 
 function clearMap() {
@@ -862,11 +875,17 @@ async function loadMapData() {
 							const normalize = (str) => str
 								.replace(/İ/g, 'i')
 								.replace(/I/g, 'i')
+								.replace(/ı/g, 'i')
 								.replace(/Ş/g, 's')
+								.replace(/ş/g, 's')
 								.replace(/Ğ/g, 'g')
+								.replace(/ğ/g, 'g')
 								.replace(/Ü/g, 'u')
+								.replace(/ü/g, 'u')
 								.replace(/Ö/g, 'o')
+								.replace(/ö/g, 'o')
 								.replace(/Ç/g, 'c')
+								.replace(/ç/g, 'c')
 								.toLowerCase();
 
 							const city = normalize(rawCity);
@@ -938,6 +957,13 @@ function renderMapUsers(cityId, users) {
 
 	const stableUsers = [...users].sort((a, b) => a.id.localeCompare(b.id));
 	const total = stableUsers.length;
+	
+	// Toplam kullanıcı sayısını güncelle
+	const totalCounter = document.getElementById(`cityTotal-${cityId}`);
+	if (totalCounter) {
+		totalCounter.innerText = total;
+	}
+
 	if (total === 0) return;
 
 	const viewBox = cityObj.viewBoxObj;
