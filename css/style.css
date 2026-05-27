@@ -9,7 +9,7 @@
 	-webkit-tap-highlight-color: transparent;
 }
 
-/* SF Pro Font TanÄ±mlamalarÄ± */
+/* SF Pro Font Tanımlamaları */
 @font-face {
 	font-family: 'SF Pro Display';
 	src: url('../fonts/SFProDisplay-Medium.woff2') format('woff2');
@@ -247,7 +247,7 @@ header {
 	color: #ef4444;
 }
 
-/* Mobil Uyumlu Medya SorgularÄ± */
+/* Mobil Uyumlu Medya Sorguları */
 @media (max-width: 600px) {
 	header {
 		padding: 12px 16px;
@@ -392,12 +392,12 @@ header {
 }
 
 /* Other alcohols custom pastel styling (when selected) */
-#otherAlcoholsGroup .pill-btn[data-value="RakÄ±"].selected {
+#otherAlcoholsGroup .pill-btn[data-value="Rakı"].selected {
 	background-color: #e0f2fe !important;
 	border-color: #0ea5e9 !important;
 	color: #0369a1 !important;
 }
-#otherAlcoholsGroup .pill-btn[data-value="Åarap"].selected {
+#otherAlcoholsGroup .pill-btn[data-value="Şarap"].selected {
 	background-color: #ffe4e6 !important;
 	border-color: #f43f5e !important;
 	color: #be185d !important;
@@ -427,26 +427,26 @@ header {
 	border-color: #a855f7 !important;
 	color: #6d28d9 !important;
 }
-#otherAlcoholsGroup .pill-btn[data-value="Ä°Ã§miyorum"].selected {
+#otherAlcoholsGroup .pill-btn[data-value="İçmiyorum"].selected {
 	background-color: #f5f5f4 !important;
 	border-color: #78716c !important;
 	color: #57504b !important;
 }
 
 /* Other alcohols translucent style when unselected */
-#otherAlcoholsGroup .pill-btn[data-value="RakÄ±"] {
+#otherAlcoholsGroup .pill-btn[data-value="Rakı"] {
 	background-color: rgba(14, 165, 233, 0.04);
 	border-color: rgba(14, 165, 233, 0.15);
 }
-#otherAlcoholsGroup .pill-btn[data-value="RakÄ±"]:hover {
+#otherAlcoholsGroup .pill-btn[data-value="Rakı"]:hover {
 	border-color: rgba(14, 165, 233, 0.3);
 }
 
-#otherAlcoholsGroup .pill-btn[data-value="Åarap"] {
+#otherAlcoholsGroup .pill-btn[data-value="Şarap"] {
 	background-color: rgba(225, 29, 72, 0.04);
 	border-color: rgba(225, 29, 72, 0.15);
 }
-#otherAlcoholsGroup .pill-btn[data-value="Åarap"]:hover {
+#otherAlcoholsGroup .pill-btn[data-value="Şarap"]:hover {
 	border-color: rgba(225, 29, 72, 0.3);
 }
 
@@ -490,11 +490,11 @@ header {
 	border-color: rgba(168, 85, 247, 0.3);
 }
 
-#otherAlcoholsGroup .pill-btn[data-value="Ä°Ã§miyorum"] {
+#otherAlcoholsGroup .pill-btn[data-value="İçmiyorum"] {
 	background-color: rgba(120, 113, 108, 0.04);
 	border-color: rgba(120, 113, 108, 0.15);
 }
-#otherAlcoholsGroup .pill-btn[data-value="Ä°Ã§miyorum"]:hover {
+#otherAlcoholsGroup .pill-btn[data-value="İçmiyorum"]:hover {
 	border-color: rgba(120, 113, 108, 0.3);
 }
 
@@ -1003,6 +1003,24 @@ header {
 	text-align: center;
 }
 
+.city-container {
+	max-width: 440px; /* Slightly smaller map width for better layout when stacked */
+	margin: 0 auto 48px auto;
+	text-align: center;
+}
+
+.city-map-title {
+	font-family: 'SF Pro Rounded', sans-serif;
+	font-size: 20px;
+	font-weight: 900;
+	color: var(--text-color);
+	letter-spacing: -0.5px;
+	margin-bottom: 16px;
+	text-align: left;
+	padding-left: 10px;
+	border-left: 4px solid var(--accent-color);
+}
+
 .map-title-container {
 	margin-bottom: 18px;
 }
@@ -1024,14 +1042,32 @@ header {
 .map-wrapper {
 	position: relative;
 	width: 100%;
-	aspect-ratio: 106.166 / 64.114;
 	background: transparent;
 	border: none;
 	padding: 0;
 	margin: 0 auto;
 }
 
-#svg-istanbul {
+.map-wrapper-istanbul {
+	aspect-ratio: 106.166 / 64.114;
+}
+
+.map-wrapper-ankara {
+	aspect-ratio: 164.271 / 146.084;
+}
+
+.map-wrapper-izmir {
+	aspect-ratio: 124.020 / 112.846;
+}
+
+.map-wrapper-eskisehir {
+	aspect-ratio: 115.474 / 84.179;
+}
+
+#svg-istanbul,
+#svg-ankara,
+#svg-izmir,
+#svg-eskisehir {
 	width: 100%;
 	height: 100%;
 	display: block;

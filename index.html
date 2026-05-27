@@ -11,17 +11,19 @@
 		// Supabase SDK'sı yüklenmeden önce localStorage durumunu senkronize olarak kontrol ediyoruz:
 		(function () {
 			try {
+				const sessionStr = localStorage.getItem('sb-qryjfafoimjcwcuruzah-auth-token');
 				let cachedProfile = null;
-				for (let i = 0; i < localStorage.length; i++) {
-					const key = localStorage.key(i);
-					if (key.startsWith('user_profile_')) {
-						cachedProfile = localStorage.getItem(key);
-						break;
-					}
+				if (sessionStr) {
+					try {
+						const session = JSON.parse(sessionStr);
+						const userId = session.user ? session.user.id : null;
+						if (userId) {
+							cachedProfile = localStorage.getItem(`user_profile_${userId}`);
+						}
+					} catch (e) { }
 				}
-				const hasSession = localStorage.getItem('sb-qryjfafoimjcwcuruzah-auth-token');
 
-				if (hasSession) {
+				if (sessionStr) {
 					// Kullanıcı oturumu var, Giriş Yap butonunu kesinlikle göstermiyoruz
 					document.documentElement.classList.add('preload-session-active');
 
