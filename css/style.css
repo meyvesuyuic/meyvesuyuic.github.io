@@ -585,6 +585,52 @@ header {
 	padding-right: 36px;
 }
 
+.textarea-wrapper {
+	position: relative;
+	width: 100%;
+}
+
+.form-input {
+	width: 100%;
+	padding: 14px 18px 28px 18px; /* Alt boşluk sayaca göre ayarlandı */
+	border: 2px solid var(--border-color);
+	border-radius: 16px;
+	font-size: 15px;
+	font-weight: 500;
+	color: var(--text-color);
+	background-color: var(--bg-color);
+	outline: none;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+	resize: none;
+	font-family: inherit;
+}
+
+.form-input:hover {
+	border-color: #cfd9de;
+}
+
+.form-input:focus {
+	border-color: var(--accent-color);
+	box-shadow: 0 0 0 4px rgba(255, 30, 0, 0.1);
+	background-color: #ffffff;
+}
+
+.form-input:disabled {
+	background-color: #f5f5f4;
+	color: #a8a29e;
+	cursor: not-allowed;
+}
+
+.char-count {
+	position: absolute;
+	bottom: 10px;
+	right: 14px;
+	font-size: 12px;
+	color: #a8a29e;
+	font-weight: 600;
+	pointer-events: none;
+}
+
 .form-select:disabled {
 	background-color: #f5f5f4;
 	color: #a8a29e;
@@ -703,8 +749,11 @@ header {
 	z-index: 1000;
 	display: flex;
 	align-items: flex-end;
-	/* Bottom sheet on mobile by default */
 	justify-content: center;
+}
+
+#profileModal {
+	z-index: 2000;
 }
 
 .profile-modal-overlay {
@@ -866,6 +915,16 @@ header {
 	color: var(--secondary-text);
 	font-weight: 500;
 	line-height: 1.2;
+	margin: 0;
+}
+
+.profile-bio {
+	font-size: 15px;
+	color: var(--text-color);
+	margin: 0 0 20px 0;
+	line-height: 1.5;
+	font-weight: 400;
+	word-break: break-word;
 }
 
 /* Preferences Details */
@@ -1257,9 +1316,9 @@ header {
 .drinker-item {
 	display: flex;
 	align-items: center;
-	gap: 16px;
-	padding: 12px 16px;
-	border-radius: 16px;
+	gap: 10px;
+	padding: 6px 12px;
+	border-radius: 12px;
 	background-color: #fafaf9;
 	border: 1px solid var(--border-color);
 	transition: background-color 0.2s ease, transform 0.1s ease;
@@ -1270,8 +1329,8 @@ header {
 }
 
 .drinker-avatar-wrapper {
-	width: 44px;
-	height: 44px;
+	width: 32px;
+	height: 32px;
 	border-radius: 50%;
 	overflow: hidden;
 	background-color: #e7e5e4;
@@ -1290,13 +1349,104 @@ header {
 	gap: 2px;
 }
 
+.drinker-info-header {
+	display: flex;
+	align-items: center;
+}
+
 .drinker-name {
 	font-weight: 700;
-	font-size: 15px;
+	font-size: 14px;
 	color: var(--text-color);
 }
 
 .drinker-location {
-	font-size: 13px;
+	font-size: 12px;
 	color: var(--secondary-text);
+}
+
+.drinker-count-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--accent-color);
+	color: #fff;
+	font-size: 14px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 8px;
+	vertical-align: middle;
+	margin-left: 8px;
+	transform: translateY(-2px);
+}
+
+.badge-new {
+	background: #10b981;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 800;
+	padding: 2px 6px;
+	border-radius: 6px;
+	margin-left: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.drinker-actions {
+	margin-left: auto;
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.btn-drinker-view {
+	background-color: #1c1917;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 6px 12px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.btn-drinker-view:hover {
+	background-color: #33302e;
+}
+
+.btn-drinker-twitter {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	background-color: #1d9bf0;
+	color: #fff;
+	border-radius: 8px;
+	text-decoration: none;
+	transition: background-color 0.2s ease;
+}
+
+.btn-drinker-twitter:hover {
+	background-color: #1a8cd8;
+}
+
+.btn-load-more {
+	width: 100%;
+	padding: 12px;
+	background-color: #f5f5f4;
+	color: #1c1917;
+	border: 1px dashed var(--border-color);
+	border-radius: 12px;
+	font-weight: 700;
+	font-size: 14px;
+	cursor: pointer;
+	margin-top: 8px;
+	transition: all 0.2s ease;
+}
+
+.btn-load-more:hover {
+	background-color: #e7e5e4;
+	border-style: solid;
 }

@@ -111,7 +111,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 		// Supabase'den güncel profil durumunu çekelim
 		const { data: dbProfile, error: dbError } = await supabase
 			.from('profiles')
-			.select('is_onboarded, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
+			.select('is_onboarded, display_name, nickname, avatar_url, bio, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
 			.eq('id', user.id)
 			.maybeSingle();
 
@@ -347,6 +347,21 @@ function initSetupLogic(user, twitterData) {
 		if (bar) bar.style.width = (step === 1 ? '50%' : '100%');
 	}
 
+	// Biyografi karakter sayacı
+	const bioInput = document.getElementById('bioInput');
+	const bioCharCount = document.getElementById('bioCharCount');
+	if (bioInput && bioCharCount) {
+		bioInput.addEventListener('input', () => {
+			const currentLength = bioInput.value.length;
+			bioCharCount.innerText = `${currentLength}/100`;
+			if (currentLength >= 100) {
+				bioCharCount.style.color = 'var(--accent-color)';
+			} else {
+				bioCharCount.style.color = '#a8a29e';
+			}
+		});
+	}
+
 	updateProgress(1);
 
 	// Adım 1 Doğrulama ve Geçiş
@@ -363,12 +378,6 @@ function initSetupLogic(user, twitterData) {
 			alert("Lütfen diğer alkol tercihlerinizi seçiniz.");
 			return;
 		}
-		const frequency = getPillValue('frequencyGroup');
-		if (!frequency) {
-			alert("Lütfen bira içme sıklığınızı seçiniz.");
-			return;
-		}
-
 		// Adım 2'ye geçiş yap
 		step1.classList.remove('active');
 		step2.classList.add('active');
@@ -378,6 +387,10 @@ function initSetupLogic(user, twitterData) {
 
 	// Adım 2 Doğrulama ve Kaydetme
 	saveProfileBtn.onclick = async () => {
+		const bioInput = document.getElementById('bioInput');
+		const rawBio = bioInput ? bioInput.value : '';
+		const sanitizedBio = rawBio.replace(/<[^>]*>?/gm, '').replace(/[<>]/g, '').trim().substring(0, 100);
+
 		const environment = getPillValue('environmentGroup');
 		if (!environment) {
 			alert("Lütfen tercih ettiğiniz içim ortamını seçiniz.");
@@ -394,10 +407,15 @@ function initSetupLogic(user, twitterData) {
 			return;
 		}
 		const frequency = getPillValue('frequencyGroup');
+		if (!frequency) {
+			alert("Lütfen bira içme sıklığınızı seçiniz.");
+			return;
+		}
 
 		// Supabase profiles tablosunu güncelle
 		const updateData = {
 			is_onboarded: true,
+			bio: sanitizedBio,
 			favorite_styles: selectedBeerStyles,
 			other_alcohols: selectedOtherAlcohols,
 			preferred_locations: selectedLocations,
@@ -424,6 +442,7 @@ function initSetupLogic(user, twitterData) {
 				display_name: twitterData.display_name,
 				nickname: twitterData.nickname,
 				avatar_url: twitterData.avatar_url,
+				bio: sanitizedBio,
 				is_onboarded: true,
 				favorite_styles: selectedBeerStyles,
 				other_alcohols: selectedOtherAlcohols,
@@ -484,7 +503,7 @@ async function openProfileModal(user) {
 		const tableName = isCurrentUser ? 'profiles' : 'public_profiles';
 		const { data, error } = await supabase
 			.from(tableName)
-			.select('is_onboarded, display_name, nickname, avatar_url, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
+			.select('is_onboarded, display_name, nickname, avatar_url, bio, favorite_styles, other_alcohols, preferred_locations, drinking_frequency, drinking_environment, abv_preference, drinking_snack')
 			.eq('id', user.id)
 			.maybeSingle();
 
@@ -503,6 +522,12 @@ async function openProfileModal(user) {
 	profileAvatarLarge.src = profileData.avatar_url || '';
 	profileDisplayName.innerText = profileData.display_name || '';
 	profileNickname.innerText = profileData.nickname ? `@${profileData.nickname}` : '';
+
+	const profileBio = document.getElementById('profileBio');
+	if (profileBio) {
+		profileBio.innerText = profileData.bio || '';
+		profileBio.style.display = profileData.bio ? 'block' : 'none';
+	}
 
 	// Twitter profil butonu ayarı
 	if (twitterProfileLink && profileActionWrapper) {
@@ -670,7 +695,7 @@ const CITIES = [
 	{
 		id: 'ankara',
 		name: 'Ankara',
-		exploreSuffix: "'i İncele",
+		exploreSuffix: "'yı İncele",
 		viewBox: '261.9829999999999 107.635 164.271 146.084',
 		viewBoxObj: { x: 261.983, y: 107.635, w: 164.271, h: 146.084 },
 		path: '<path d="M349.776,112.635l-0.47,0.969l-0.062,0.125l-0.125,0.062l-1.939,1.187 c-0.027,0.051-0.064,0.094-0.094,0.188c-0.017,0.052-0.029,0.072-0.031,0.094c0.143,0.115,0.289,0.261,0.5,0.469 c0.238,0.234,0.543,0.507,0.812,0.781c0.538,0.55,1.03,1.063,1.03,1.063l0.094,0.125l0.031,0.125l0.437,2.156l0.062,0.375 l-0.344,0.156l-2.439,1.218l-0.062,0.031l-3.939,2.748h-0.031l-2.689,1.624h-0.031l-6.314,3.028c0,0-0.03,0.031-0.031,0.031 c-0.034,0.019-0.626,0.327-1.281,0.687c-0.337,0.185-0.677,0.381-0.969,0.53c-0.146,0.075-0.262,0.135-0.375,0.188 s-0.182,0.092-0.312,0.125c0.058-0.015-0.245,0.115-0.531,0.25s-0.656,0.297-1,0.468c-0.688,0.344-1.312,0.687-1.312,0.687 l-3.157,2.342v0.031h-0.031l-1.876,1.249l-0.125,0.094h-0.125c0,0-6.978-0.004-7.781-0.004c-0.198,0-1.069,0.195-1.781,0.437 c-0.678,0.229-1.226,0.446-1.281,0.468l-0.062,0.031l-1.813,0.968l-0.125,0.031h-0.125l-5.719-0.065h-0.094l-0.094-0.062 l-3.561-1.596l-0.125-0.062l-0.062-0.062l-1.343-1.532l-1.094-0.782l-3.625,0.404h-0.031l-3,0.529l-0.156,0.031l-0.159-0.066 l-2.03-1.157l-0.031-0.031l-2.843-1.314l-2.03-1.001l-1.344,0.124l-0.907,1.874l-0.031,0.062v0.031l-1.064,4.03v0.094l-0.062,0.062 l-1.501,2.218l-0.031,0.031l-0.031,0.031l-1.532,1.624l-0.094,0.125l-0.188,0.031l-3.531,0.404l-0.125,0.031l-2.345,1.03h-0.031 l-2.657,1.311l-1.625,0.843l1.248,3.563v0.031h0.031l0.499,2.031c0.063,0.07,0.213,0.233,0.5,0.469 c0.342,0.282,0.787,0.531,1,0.532c0.713,0,1.241,0.454,1.656,0.845c0.285,0.268,0.387,0.39,0.5,0.531 c0.169-0.003,1.266-0.005,2.5-0.468c1.386-0.519,1.703-0.886,2.532-1.093c0.319-0.08,0.889-0.246,1.438-0.405 c0.549-0.16,1.08-0.311,1.562-0.311c0.324,0,0.706,0.1,1.25,0.22c0.544,0.119,1.185,0.282,1.812,0.439 c1.206,0.302,2.225,0.571,2.312,0.595l5.595-1.216l0.125-0.031l0.125,0.031l6.249,1.972l5.405,1.941h0.031l6.562,0.192h0.25 l0.156,0.219l2.31,3.376l0.031,0.031l0.031,0.062l2.059,5.001c0.125,0.063,0.818,0.409,1.75,0.907 c1.011,0.54,2.082,1.13,2.624,1.563c0.861,0.689,2.655,1.97,2.655,1.97l0.562,0.375l-0.531,0.406l-4.314,3.467l3.372,5.908v0.031 l2.154,4.47v0.031l2.309,5.876l0.031,0.031v0.031l1.435,5.001l0.031,0.125l-0.031,0.156l-1.597,5.218l0.842,3.125l2.405,2.407 l0.156,0.156l-0.031,0.25l-0.345,2.688l-0.031,0.25l-0.216,0.127l-4.313,2.31v0.031h-0.031l-4.532,1.936l-3.128,3.905l3.593,2.252 l0.125,0.062l0.062,0.125l1.748,3.532l1.623,3.063l4.438,0.471l4.657-1.966l0.094-0.062h0.094l4.312,0.002h0.125l0.094,0.062 l5.467,2.753l0.094,0.031l4.593,1.441l7.282-2.434l4.972-4.716l0.094-0.094l0.125-0.031l3.345-0.936l3.908-4.342l1.002-2.968 l0.125-0.438l0.438,0.094l3.969,0.69l2.096-3.249l0.219-0.375l0.406,0.188l5.311,2.534l0.031,0.031l0.062,0.031l9.371,7.693 l1.563-1.405v-0.031l1.063-1.749l0.188-0.344l0.375,0.125l2.344,0.72l0.281,0.094l0.062,0.312l0.155,1.031l1.937,1.313l0.094,0.031 l0.062,0.094l2.498,3.751l0.031,0.062v0.031l1.092,2.876l0.031,0.125l-0.031,0.156l-0.877,3.75l-0.031,0.125l-0.125,0.125 l-0.906,0.906l0.341,5.281l1.968,2.532l1.812,0.876l0.596-3.438l0.125-0.688l0.594,0.344l2.311,1.251l0.094,0.031l0.062,0.094 l2.498,3.22l0.062,0.062l0.031,0.062l0.874,2.312l0.062,0.156l-0.031,0.125l-0.501,2.312l1.655,2.313l0.062,0.062l0.75-0.469 l1.752-3.624l1.94-4.093v-0.031l0.47-2.625l-0.937-2.719l-2.624-2.657l-0.312-0.312l0.25-0.344l2.346-3.03l0.063-0.086l0.094-0.062 l4.563-2.467l0.625-0.938l-4.249-1.752l-0.062-0.031h-0.031l-2.155-1.439l-0.031-0.031l-0.062-0.062l-3.092-3.471h-0.031 l-3.874-2.314l-0.094-0.062l-0.031-0.062l-3.217-3.752l-0.031-0.031l-0.031-0.031l-1.904-3.282l-2.061-1.563l-0.219-0.156v-0.25 l0.002-3.719l-1.968-1.813l-0.094-0.062l-0.033-0.129l-0.905-2.5l-0.031-0.125l0.031-0.156l0.846-3.969l-0.655-2.781l-3.561-2.377 l-0.094-0.062l-0.062-0.094l-0.999-1.689l-0.062-0.094l-1.874-1.876l-0.156-0.156v-0.188l0.001-2.312v-0.188l0.094-0.125 l2.971-4.186l0.501-2.156l0.378-6.25v-0.094l0.031-0.094l1.439-2.687l0.847-4.844l0.062-0.406l0.406-0.031l6.094-0.341l4.158-3.123 h0.031h0.031l1.907-1.187l-1.218-2.47l-0.031-0.062v-0.094l-0.529-3.562l-0.031-0.031v-0.031l0.002-3.594v-0.125l0.094-0.125 l2.658-4.28l2.722-4.624l-4.407-1.438h-0.031l-0.031-0.031l-3.624-1.908l-4.624-1.066h-0.031l-4.344,0.186l-1.876,1.905 l-0.689,2.031l-0.094,0.281l-0.281,0.062l-1.969,0.343l-0.25,0.031l-0.188-0.156l-3.217-3.033v-0.031l-2.687-2.657l-0.062-0.062 l-0.031-0.062l-1.061-1.97l-0.062-0.094v-0.094l-0.155-2.625l-4.779-2.878l-0.031-0.031l-0.031-0.031l-1.624-1.439l-0.125-0.125 l-0.031-0.188l-0.343-2.656l-0.031-0.219l0.094-0.156l1.657-2.343l-2.906-0.346h-0.062l-0.031-0.031l-2.5-0.876l-0.031-0.031 h-0.031l-2.843-1.346h-0.031l-0.031-0.031l-1.655-1.126l-0.062-0.031l-2.218-1.157L349.776,112.635z"></path>',
@@ -706,9 +731,10 @@ let currentMapUsers = {
 	eskisehir: []
 };
 
-const MAP_CACHE_KEY = 'bira_map_users_cache';
-const MAP_CACHE_TIME_KEY = 'bira_map_users_cache_time';
-const MAP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Harita Kullanıcıları Önbelleği İçin Sabitler
+const MAP_CACHE_KEY = 'mapUsersCacheV3';
+const MAP_CACHE_TIME_KEY = 'mapUsersCacheTimeV3';
+const MAP_CACHE_DURATION = 5 * 60 * 1000; // 5 dakika (milisaniye cinsinden)
 
 function initMap() {
 	const mapSection = document.getElementById('mapSection');
@@ -797,7 +823,7 @@ async function loadMapData() {
 		// Fetch up to 100 onboarded users, sorted by latest updates
 		const { data, error } = await supabase
 			.from('public_profiles')
-			.select('id, display_name, avatar_url, preferred_locations')
+			.select('id, display_name, nickname, avatar_url, preferred_locations, updated_at')
 			.order('updated_at', { ascending: false })
 			.limit(100);
 
@@ -836,29 +862,37 @@ async function loadMapData() {
 								currentMapUsers.istanbul.push({
 									id: profile.id,
 									display_name: profile.display_name,
+									nickname: profile.nickname,
 									avatar_url: profile.avatar_url,
-									district: dist
+									district: dist,
+									updated_at: profile.updated_at
 								});
 							} else if (city === 'ankara') {
 								currentMapUsers.ankara.push({
 									id: profile.id,
 									display_name: profile.display_name,
+									nickname: profile.nickname,
 									avatar_url: profile.avatar_url,
-									district: dist
+									district: dist,
+									updated_at: profile.updated_at
 								});
 							} else if (city === 'izmir') {
 								currentMapUsers.izmir.push({
 									id: profile.id,
 									display_name: profile.display_name,
+									nickname: profile.nickname,
 									avatar_url: profile.avatar_url,
-									district: dist
+									district: dist,
+									updated_at: profile.updated_at
 								});
 							} else if (city === 'eskisehir') {
 								currentMapUsers.eskisehir.push({
 									id: profile.id,
 									display_name: profile.display_name,
+									nickname: profile.nickname,
 									avatar_url: profile.avatar_url,
-									district: dist
+									district: dist,
+									updated_at: profile.updated_at
 								});
 							}
 						}
@@ -881,64 +915,94 @@ async function loadMapData() {
 }
 
 function renderMapUsers(cityId, users) {
-  const mapContainer = document.getElementById(`mapAvatarsContainer-${cityId}`);
-  if (!mapContainer) return;
-  mapContainer.innerHTML = '';
+	const mapContainer = document.getElementById(`mapAvatarsContainer-${cityId}`);
+	const svgEl = document.getElementById(`svg-${cityId}`);
+	if (!mapContainer || !svgEl) return;
+	mapContainer.innerHTML = '';
 
-  const cityObj = CITIES.find(c => c.id === cityId);
-  if (!cityObj) return;
+	const cityObj = CITIES.find(c => c.id === cityId);
+	if (!cityObj) return;
 
-  const stableUsers = [...users].sort((a, b) => a.id.localeCompare(b.id));
-  const total = stableUsers.length;
-  if (total === 0) return;
+	const stableUsers = [...users].sort((a, b) => a.id.localeCompare(b.id));
+	const total = stableUsers.length;
+	if (total === 0) return;
 
-  const viewBox = cityObj.viewBoxObj;
-  const center = cityObj.center;
-  const maxRadius = cityObj.radius;
+	const viewBox = cityObj.viewBoxObj;
+	const center = cityObj.center;
+	const maxRadius = cityObj.radius;
 
-  // Altın açı: her nokta bir öncekine göre bu kadar döner
-  // Bu açı sayesinde noktalar hiçbir zaman üst üste gelmez
-  const GOLDEN_ANGLE = 137.508;
+	// Harita üzerindeki kara parçalarını (path) bulalım
+	const paths = Array.from(svgEl.querySelectorAll('path'));
+	function isInsideLand(x, y) {
+		if (paths.length === 0) return true;
+		const pt = svgEl.createSVGPoint();
+		pt.x = x;
+		pt.y = y;
+		return paths.some(p => p.isPointInFill(pt));
+	}
 
-  stableUsers.forEach((user, i) => {
-    // Sarmalın dışa doğru büyümesi: merkezdeki ilk kullanıcıdan
-    // kenardaki son kullanıcıya kadar kademeli genişler
-    const t = total === 1 ? 0 : i / (total - 1);
-    const r = total === 1 ? 0 : maxRadius * Math.sqrt(t) * 0.85;
+	// Altın açı: noktaların üst üste binmemesi için
+	const GOLDEN_ANGLE = 137.508;
+	let seq = 0; // Sarmal sırası
 
-    // Her nokta altın açı kadar döner — üst üste binmeyi engeller
-    const angleDeg = i * GOLDEN_ANGLE;
-    const angleRad = (angleDeg * Math.PI) / 180;
+	stableUsers.forEach((user, i) => {
+		let svgX, svgY;
+		let found = false;
+		let attempts = 0;
 
-    const svgX = center.x + r * Math.cos(angleRad);
-    const svgY = center.y + r * Math.sin(angleRad);
+		// Kara parçasına (path içine) denk gelene kadar sarmalda ilerle
+		while (!found && attempts < 1000) {
+			const t = seq / Math.max(total, 5);
+			const r = maxRadius * Math.sqrt(t) * 0.75;
 
-    // SVG koordinatlarını container yüzdesine çevir
-    const leftPercent = ((svgX - viewBox.x) / viewBox.w) * 100;
-    const topPercent = ((svgY - viewBox.y) / viewBox.h) * 100;
+			const angleDeg = seq * GOLDEN_ANGLE;
+			const angleRad = (angleDeg * Math.PI) / 180;
 
-    const pin = document.createElement('div');
-    pin.className = 'map-user-pin';
-    pin.style.left = `${leftPercent}%`;
-    pin.style.top = `${topPercent}%`;
-    pin.setAttribute('data-name', user.display_name);
+			svgX = center.x + r * Math.cos(angleRad);
+			svgY = center.y + r * Math.sin(angleRad);
 
-    pin.addEventListener('click', () => {
-      openProfileModal({ id: user.id });
-    });
+			if (isInsideLand(svgX, svgY)) {
+				found = true;
+			}
+			seq++;
+			attempts++;
+		}
 
-    const img = document.createElement('img');
-    img.className = 'map-user-avatar';
-    img.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-    img.alt = user.display_name;
-    img.onerror = () => {
-      img.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-    };
+		if (!found) {
+			svgX = center.x;
+			svgY = center.y;
+		}
 
-    pin.appendChild(img);
-    mapContainer.appendChild(pin);
-  });
+		// SVG koordinatlarını container yüzdesine çevir
+		const leftPercent = ((svgX - viewBox.x) / viewBox.w) * 100;
+		const topPercent = ((svgY - viewBox.y) / viewBox.h) * 100;
+
+		const pin = document.createElement('div');
+		pin.className = 'map-user-pin';
+		pin.style.left = `${leftPercent}%`;
+		pin.style.top = `${topPercent}%`;
+		pin.setAttribute('data-name', user.display_name);
+
+		pin.addEventListener('click', () => {
+			openProfileModal({ id: user.id });
+		});
+
+		const img = document.createElement('img');
+		img.className = 'map-user-avatar';
+		img.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		img.alt = user.display_name;
+		img.onerror = () => {
+			img.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		};
+
+		pin.appendChild(img);
+		mapContainer.appendChild(pin);
+	});
 }
+
+// Sayfalama için global state
+let currentDrinkersPage = 1;
+const DRINKERS_PER_PAGE = 20;
 
 // Drinkers Bottom Sheet Modal Handlers
 function openDrinkersModal(cityId) {
@@ -947,56 +1011,23 @@ function openDrinkersModal(cityId) {
 	if (!modal || !container) return;
 
 	container.innerHTML = '';
+	currentDrinkersPage = 1;
 
 	const cityObj = CITIES.find(c => c.id === cityId);
 	const cityName = cityObj ? cityObj.name : '';
 
+	const usersInCity = currentMapUsers[cityId] || [];
+
 	// Modaldaki başlığı güncelle
 	const modalTitle = modal.querySelector('h2');
 	if (modalTitle) {
-		modalTitle.innerText = `${cityName}'daki Biraseverler`;
+		modalTitle.innerHTML = `${cityName}'daki Biraseverler <span class="drinker-count-badge">${usersInCity.length}</span>`;
 	}
-
-	const usersInCity = currentMapUsers[cityId] || [];
 
 	if (usersInCity.length === 0) {
 		container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); margin-top: 20px;">Henüz ${cityName}'da kayıtlı birasever bulunmuyor.</p>`;
 	} else {
-		usersInCity.forEach(user => {
-			const item = document.createElement('div');
-			item.className = 'drinker-item';
-
-			const avatarWrapper = document.createElement('div');
-			avatarWrapper.className = 'drinker-avatar-wrapper';
-
-			const avatarImg = document.createElement('img');
-			avatarImg.className = 'drinker-avatar';
-			avatarImg.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-			avatarImg.alt = user.display_name;
-			avatarImg.onerror = (e) => {
-				e.target.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-			};
-			avatarWrapper.appendChild(avatarImg);
-
-			const infoDiv = document.createElement('div');
-			infoDiv.className = 'drinker-info';
-
-			const nameSpan = document.createElement('span');
-			nameSpan.className = 'drinker-name';
-			nameSpan.textContent = user.display_name;
-
-			const locationSpan = document.createElement('span');
-			locationSpan.className = 'drinker-location';
-			locationSpan.textContent = user.district || '';
-
-			infoDiv.appendChild(nameSpan);
-			infoDiv.appendChild(locationSpan);
-
-			item.appendChild(avatarWrapper);
-			item.appendChild(infoDiv);
-
-			container.appendChild(item);
-		});
+		renderDrinkersPage(usersInCity, container);
 	}
 
 	// Show modal
@@ -1005,6 +1036,129 @@ function openDrinkersModal(cityId) {
 	setTimeout(() => {
 		modal.classList.add('active');
 	}, 10);
+}
+
+function renderDrinkersPage(usersInCity, container) {
+	const startIndex = (currentDrinkersPage - 1) * DRINKERS_PER_PAGE;
+	const endIndex = startIndex + DRINKERS_PER_PAGE;
+	const usersToRender = usersInCity.slice(startIndex, endIndex);
+
+	// Remove load more button if it exists before appending new items
+	const existingLoadMoreBtn = container.querySelector('.btn-load-more');
+	if (existingLoadMoreBtn) {
+		existingLoadMoreBtn.remove();
+	}
+
+	const now = new Date();
+
+	usersToRender.forEach(user => {
+		const item = document.createElement('div');
+		item.className = 'drinker-item';
+
+		// YENİ damgası kontrolü (son 24 saat içinde updated_at)
+		let isNew = false;
+		if (user.updated_at) {
+			const updatedAtDate = new Date(user.updated_at);
+			const diffMs = now - updatedAtDate;
+			const diffHours = diffMs / (1000 * 60 * 60);
+			if (diffHours <= 24) {
+				isNew = true;
+			}
+		}
+
+		const avatarWrapper = document.createElement('div');
+		avatarWrapper.className = 'drinker-avatar-wrapper';
+
+		const avatarImg = document.createElement('img');
+		avatarImg.className = 'drinker-avatar';
+		avatarImg.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		avatarImg.alt = user.display_name;
+		avatarImg.onerror = (e) => {
+			e.target.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		};
+		avatarWrapper.appendChild(avatarImg);
+
+		const infoDiv = document.createElement('div');
+		infoDiv.className = 'drinker-info';
+
+		const infoHeader = document.createElement('div');
+		infoHeader.className = 'drinker-info-header';
+		
+		const nameSpan = document.createElement('span');
+		nameSpan.className = 'drinker-name';
+		nameSpan.textContent = user.display_name;
+		infoHeader.appendChild(nameSpan);
+
+		if (isNew) {
+			const newBadge = document.createElement('span');
+			newBadge.className = 'badge-new';
+			newBadge.textContent = 'YENİ';
+			infoHeader.appendChild(newBadge);
+		}
+
+		const locationSpan = document.createElement('span');
+		locationSpan.className = 'drinker-location';
+		locationSpan.textContent = user.district || '';
+
+		infoDiv.appendChild(infoHeader);
+		infoDiv.appendChild(locationSpan);
+
+		// Aksiyon Butonları
+		const actionsDiv = document.createElement('div');
+		actionsDiv.className = 'drinker-actions';
+
+		const viewBtn = document.createElement('button');
+		viewBtn.className = 'btn-drinker-view';
+		viewBtn.textContent = 'İncele';
+		viewBtn.onclick = () => {
+			openProfileModal({ id: user.id });
+		};
+
+		// Twitter Deep Link Butonu
+		if (user.nickname) {
+			const twitterBtn = document.createElement('a');
+			twitterBtn.className = 'btn-drinker-twitter';
+			twitterBtn.href = `https://x.com/${user.nickname}`;
+			twitterBtn.target = '_blank';
+			twitterBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>`;
+			twitterBtn.onclick = (e) => {
+				e.preventDefault();
+				const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+				if (isMobile) {
+					const start = Date.now();
+					window.location.href = `twitter://user?screen_name=${user.nickname}`;
+					setTimeout(() => {
+						if (Date.now() - start < 1500) {
+							window.open(`https://x.com/${user.nickname}`, '_blank');
+						}
+					}, 1000);
+				} else {
+					window.open(`https://x.com/${user.nickname}`, '_blank');
+				}
+			};
+			actionsDiv.appendChild(viewBtn);
+			actionsDiv.appendChild(twitterBtn);
+		} else {
+			actionsDiv.appendChild(viewBtn);
+		}
+
+		item.appendChild(avatarWrapper);
+		item.appendChild(infoDiv);
+		item.appendChild(actionsDiv);
+
+		container.appendChild(item);
+	});
+
+	if (endIndex < usersInCity.length) {
+		const loadMoreBtn = document.createElement('button');
+		loadMoreBtn.className = 'btn-load-more';
+		loadMoreBtn.textContent = 'Daha Fazla Yükle';
+		loadMoreBtn.onclick = () => {
+			currentDrinkersPage++;
+			renderDrinkersPage(usersInCity, container);
+		};
+		container.appendChild(loadMoreBtn);
+	}
 }
 
 function closeDrinkersModal() {

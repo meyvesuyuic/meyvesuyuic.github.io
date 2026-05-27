@@ -118,6 +118,14 @@
 				</div>
 
 				<div class="form-group">
+					<label>Biyografi (Kendinden bahset)</label>
+					<div class="textarea-wrapper">
+						<textarea id="bioInput" class="form-input" maxlength="100" rows="3" placeholder="Kendini kısaca anlat..."></textarea>
+						<span class="char-count" id="bioCharCount">0/100</span>
+					</div>
+				</div>
+
+				<div class="form-group">
 					<label>Favori Bira Tarzların</label>
 					<div class="pill-group" id="beerStylesGroup">
 						<div class="pill-btn" data-value="Hafif & Ferahlatıcı (Lager/Pilsner)">Hafif & Ferahlatıcı</div>
@@ -142,6 +150,14 @@
 					</div>
 				</div>
 
+
+				<button id="nextBtnStep1" class="btn-main">Devam Et</button>
+			</div>
+
+			<!-- ADIM 2 -->
+			<div id="step-2" class="setup-step">
+				<h3>Son birkaç detay</h3>
+
 				<div class="form-group">
 					<label>Ne Sıklıkla Bira İçersin?</label>
 					<div class="pill-group" id="frequencyGroup">
@@ -152,13 +168,6 @@
 						<div class="pill-btn" data-value="Ayda yılda bir">Ayda Yılda Bir</div>
 					</div>
 				</div>
-
-				<button id="nextBtnStep1" class="btn-main">Devam Et</button>
-			</div>
-
-			<!-- ADIM 2 -->
-			<div id="step-2" class="setup-step">
-				<h3>Son birkaç detay</h3>
 
 				<div class="form-group">
 					<label>En Sevdiğin İçim Ortamı Nedir?</label>
@@ -215,6 +224,8 @@
 						<p class="profile-nickname" id="profileNickname"></p>
 					</div>
 				</div>
+
+				<p class="profile-bio" id="profileBio"></p>
 
 				<!-- Twitter Profiline Git Butonu -->
 				<div class="profile-action-wrapper" id="profileActionWrapper" style="display: none; margin-bottom: 20px;">
