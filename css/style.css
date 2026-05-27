@@ -136,7 +136,8 @@ header {
 	/* Base container for particles */
 	font-size: 11px;
 	/* Base scaling unit (em) */
-	will-change: transform;
+	filter: blur(3px);
+	-webkit-filter: blur(3px);
 	pointer-events: none;
 	z-index: 1;
 }
@@ -155,9 +156,6 @@ header {
 	width: var(--size, 2.5em);
 	height: var(--size, 2.5em);
 	left: var(--left);
-	filter: blur(2px);
-	-webkit-filter: blur(2px);
-	will-change: transform, opacity;
 }
 
 @keyframes rise {
