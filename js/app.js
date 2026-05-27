@@ -51,6 +51,7 @@ logoutBtn.addEventListener('click', async () => {
 	const user = (await supabase.auth.getUser()).data.user;
 	if (user) {
 		localStorage.removeItem(`user_profile_${user.id}`);
+		localStorage.removeItem(`user_profile_fetched_at_${user.id}`);
 	}
 	const { error } = await supabase.auth.signOut();
 	if (error) {
@@ -809,7 +810,9 @@ function clearMap() {
 async function loadMapData() {
 	const { data: { session } } = await supabase.auth.getSession();
 	if (!session) {
-		// public_profiles view'i herkese açık olsa da, client tarafında UI sadece authenticated session'larda çalışmalıdır
+		// Harita sadece giriş yapmış kullanıcılara gösterilir.
+		// public_profiles view'ı artık yalnızca authenticated 
+		// kullanıcılara açık — anon erişimi Supabase'de revoke edildi.
 		console.warn("Yetkisiz harita yükleme girişimi engellendi.");
 		clearMap();
 		return;
