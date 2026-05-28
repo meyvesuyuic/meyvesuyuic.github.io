@@ -176,7 +176,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
 			if (!dbProfile) {
 				// İlk defa geliyorsa profili default değerlerle oluşturalım
-				await supabase.from('profiles').upsert(twitterData, { onConflict: 'id' });
+				const { error: upsertError } = await supabase.from('profiles').upsert(twitterData, { onConflict: 'id' });
+				if (upsertError) {
+					console.error("Profil oluşturulamadı:", upsertError);
+				}
 			}
 
 			// Setup sihirbazını başlatıyoruz
@@ -496,12 +499,15 @@ function initSetupLogic(user, twitterData) {
 			updated_at: new Date().toISOString()
 		};
 
-		const { error } = await supabase
+		const { data: updatedProfile, error } = await supabase
 			.from('profiles')
 			.update(updateData)
-			.eq('id', user.id);
+			.eq('id', user.id)
+			.select()
+			.maybeSingle();
 
 		if (error) {
+			console.error("Supabase upsert error:", error);
 			alert("Profil kurulumu tamamlanırken bir hata oluştu: " + error.message);
 			resetBtn();
 		} else {
@@ -524,6 +530,7 @@ function initSetupLogic(user, twitterData) {
 				drinking_snack: snack
 			};
 			localStorage.setItem(localKey, JSON.stringify(localData));
+			localStorage.setItem(`user_profile_fetched_at_${user.id}`, Date.now().toString());
 
 			// Arayüzü güncelle
 			userName.innerText = twitterData.display_name;
@@ -778,8 +785,6 @@ function closeKvkkModal() {
 	}, { once: true });
 }
 
-// Global scope'da openKvkkModalBtn yakalamak için event delegation veya document listener kullanıyoruz
-// çünkü element initSetupLogic içinde veya statik olabilir.
 document.addEventListener('click', (e) => {
 	if (e.target && e.target.id === 'openKvkkModalBtn') {
 		openKvkkModal(e);
@@ -795,6 +800,8 @@ if (acceptKvkkBtn) {
 		closeKvkkModal();
 	});
 }
+
+
 
 // Fire Effect Particles Generation (CSS Particle iptal edildi, fire.gif kullanılıyor)
 /*
