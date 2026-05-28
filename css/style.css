@@ -1629,5 +1629,21 @@ input:checked+.slider:before {
 .live-session-info {
 	font-size: 13.5px;
 	color: var(--secondary-text);
-	margin-bottom: 6px;
 }
+
+/* Şehir Ayarları Checkbox Stilleri */
+.city-toggle-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: #fafaf9;
+	border: 1px solid var(--border-color);
+	border-radius: 12px;
+}
+
+.city-toggle-item span {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-color);
+}

@@ -92,6 +92,43 @@
 		<div class="map-section-header" id="mapSectionHeader" style="display: none;">
 			<h1>Bira Topluluk Haritası</h1>
 			<p>Burada şehrindeki genel içicileri ve anlık içicileri görebilirsin.</p>
+			
+			<!-- Global Harita Kontrolleri -->
+			<div class="global-map-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
+				
+				<!-- Sol Taraf (Ayarlar ve Yenile) -->
+				<div style="display: flex; gap: 8px;">
+					<button id="btnCitySettings" title="Şehir Görünümü" class="btn-map-refresh" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
+						<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+							<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+						</svg>
+					</button>
+					<button id="btnGlobalRefresh" class="btn-map-refresh" title="Haritayı Yenile" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
+						<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						</svg>
+					</button>
+				</div>
+				
+				<!-- Sağ Taraf (Anlık Switch ve İlan Ver) -->
+				<div style="display: flex; gap: 12px; align-items: center;">
+					<div class="toggle-switch-wrapper" id="globalLiveToggleWrapper" style="opacity: 1; cursor: pointer; margin: 0;">
+						<span class="toggle-label" style="font-size: 15px;">Anlık Mod</span>
+						<label class="switch">
+							<input type="checkbox" id="globalLiveToggle">
+							<span class="slider round"></span>
+						</label>
+					</div>
+					<div id="btnCreateLiveSessionWrapper" style="width: 0; opacity: 0; overflow: hidden; transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center;">
+						<button id="btnCreateLiveSessionGlobal" class="btn-main" title="İlan Ver" style="padding: 0; width: 36px; height: 36px; min-width: 36px; border-radius: 50%; margin: 0; display: flex; align-items: center; justify-content: center;">
+							<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+							</svg>
+						</button>
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<!-- İstanbul Haritası Bölümü -->
@@ -393,6 +430,27 @@
 					</div>
 				</div>
 				<button class="btn-main" id="submitLiveSessionBtn">İlan Oluştur</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Şehir Görünümü Modalı -->
+	<div class="profile-modal" id="citySettingsModal" style="display: none;">
+		<div class="profile-modal-overlay" id="citySettingsModalOverlay"></div>
+		<div class="profile-modal-content">
+			<div class="profile-modal-header">
+				<button class="btn-close-modal" id="closeCitySettingsBtn" title="Kapat">
+					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+				<h2 style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">Şehir Görünümü</h2>
+			</div>
+			<div class="profile-modal-body">
+				<p style="text-align: center; color: var(--secondary-text); font-size: 14.5px; margin-bottom: 20px;">Ana sayfada görmek istediğin şehirleri seç.</p>
+				<div class="city-toggles-container" id="cityTogglesContainer" style="display: flex; flex-direction: column; gap: 12px;">
+					<!-- Şehir Checkbox'ları JavaScript ile eklenecek -->
+				</div>
 			</div>
 		</div>
 	</div>

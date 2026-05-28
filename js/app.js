@@ -630,11 +630,21 @@ async function openProfileModal(user) {
 	}
 
 	// Modalı göster
-	document.body.style.overflow = 'hidden';
+	lockScroll();
 	profileModal.style.display = 'flex';
 	setTimeout(() => {
 		profileModal.classList.add('active');
 	}, 10);
+}
+
+// Scroll kilitleme yardımcı fonksiyonları
+function lockScroll() {
+	document.body.style.overflow = 'hidden';
+	document.documentElement.style.overflow = 'hidden';
+}
+function unlockScroll() {
+	document.body.style.overflow = '';
+	document.documentElement.style.overflow = '';
 }
 
 // Profil modalını kapatma
@@ -653,7 +663,7 @@ function closeProfileModal() {
 
 	setTimeout(() => {
 		profileModal.style.display = 'none';
-		document.body.style.overflow = '';
+		unlockScroll();
 	}, 350);
 }
 
@@ -773,20 +783,8 @@ function initMap() {
 							Toplam <strong id="cityTotal-${city.id}">0</strong> kullanıcı
 						</div>
 						<div class="city-controls">
-							<div class="toggle-switch-wrapper" title="Şu an yapım aşamasında">
-								<span class="toggle-label">Anlık</span>
-								<label class="switch">
-									<input type="checkbox" id="toggleActive-${city.id}" disabled>
-									<span class="slider round disabled"></span>
-								</label>
-							</div>
-							<div style="display: flex; gap: 8px; align-items: center;">
+							<div style="display: flex; gap: 8px; align-items: center; margin: 0 auto;">
 								<button class="btn-map-action" id="btnExplore-${city.id}"></button>
-								<button class="btn-map-refresh" id="btnRefresh-${city.id}" title="Haritayı Yenile">
-									<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-									</svg>
-								</button>
 							</div>
 						</div>
 					</div>
@@ -802,18 +800,13 @@ function initMap() {
 				btnExplore.innerText = `${city.name}${city.exploreSuffix}`;
 				btnExplore.addEventListener('click', () => openDrinkersModal(city.id));
 			}
-			const btnRefresh = document.getElementById(`btnRefresh-${city.id}`);
-			if (btnRefresh) {
-				btnRefresh.addEventListener('click', () => {
-					localStorage.removeItem('mapUsersCacheV3');
-					localStorage.removeItem('mapUsersCacheTimeV3');
-					location.reload();
-				});
-			}
 		});
 	}
 	mapSection.style.display = 'block';
 	if (mapSectionHeader) mapSectionHeader.style.display = 'block';
+	
+	// Şehir görünürlük ayarlarını uygula
+	applyCityVisibility();
 }
 
 function clearMap() {
@@ -830,7 +823,10 @@ function clearMap() {
 	};
 }
 
-async function loadMapData() {
+// -------------------------------------------------------------
+// Orijinal loadMapData Fonksiyonunu Genişletilmiş Olarak Eziyoruz
+// -------------------------------------------------------------
+window.loadMapData = async function () {
 	const { data: { session } } = await supabase.auth.getSession();
 	if (!session) {
 		console.warn("Yetkisiz harita yükleme girişimi engellendi.");
@@ -839,20 +835,8 @@ async function loadMapData() {
 	}
 
 	// Switch disabled durumunu kaldırıyoruz (Giriş yapıldığında)
-	document.querySelectorAll('input[id^="toggleActive-"]').forEach(input => {
-		input.disabled = false;
-		
-		// Görsel olarak da disabled durumunu kaldıralım
-		const wrapper = input.closest('.toggle-switch-wrapper');
-		if (wrapper) {
-			wrapper.style.opacity = '1';
-			wrapper.style.cursor = 'pointer';
-		}
-		const slider = input.nextElementSibling;
-		if (slider) {
-			slider.classList.remove('disabled');
-		}
-	});
+	const globalToggle = document.getElementById('globalLiveToggle');
+	if (globalToggle) globalToggle.disabled = false;
 
 	// EĞER LIVE MOD AÇIKSA
 	if (isLiveMode) {
@@ -1056,7 +1040,7 @@ function openDrinkersModal(cityId) {
 	}
 
 	// Show modal
-	document.body.style.overflow = 'hidden';
+	lockScroll();
 	modal.style.display = 'flex';
 	setTimeout(() => {
 		modal.classList.add('active');
@@ -1204,7 +1188,7 @@ function closeDrinkersModal() {
 
 	setTimeout(() => {
 		modal.style.display = 'none';
-		document.body.style.overflow = '';
+		unlockScroll();
 	}, 350);
 }
 
@@ -1223,66 +1207,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 /* ==============================================================
-	 ANLIK İÇİYORUM (LIVE SESSIONS) EKLENTİSİ
+	 ANLIK İÇİYORUM (LIVE SESSIONS) & GLOBAL AYARLAR
 ============================================================== */
 let isLiveMode = false;
 
-// Event Delegation for Map Switches
-document.addEventListener('change', (e) => {
-	if (e.target && e.target.id && e.target.id.startsWith('toggleActive-')) {
-		const cityId = e.target.id.replace('toggleActive-', '');
-		const isChecked = e.target.checked;
+// Global Map Refresh
+document.addEventListener('DOMContentLoaded', () => {
+	const btnGlobalRefresh = document.getElementById('btnGlobalRefresh');
+	if (btnGlobalRefresh) {
+		btnGlobalRefresh.addEventListener('click', () => {
+			localStorage.removeItem('mapUsersCacheV3');
+			localStorage.removeItem('mapUsersCacheTimeV3');
+			location.reload();
+		});
+	}
 
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			if (!session) {
-				alert("Anlık içiyorum özelliğini kullanmak için giriş yapmalısınız.");
-				e.target.checked = false;
-				return;
-			}
+	const globalLiveToggle = document.getElementById('globalLiveToggle');
+	if (globalLiveToggle) {
+		globalLiveToggle.addEventListener('change', (e) => {
+			supabase.auth.getSession().then(({ data: { session } }) => {
+				if (!session) {
+					alert("Anlık mod özelliğini kullanmak için giriş yapmalısınız.");
+					e.target.checked = false;
+					return;
+				}
 
-			if (isChecked) {
-				handleLiveToggleOn(cityId, e.target);
-			} else {
-				isLiveMode = false;
-				document.querySelectorAll('.map-section').forEach(el => el.classList.remove('live-mode'));
-				document.querySelectorAll('input[id^="toggleActive-"]').forEach(input => input.checked = false);
-				loadMapData();
-			}
+				const isChecked = e.target.checked;
+				const wrapper = document.getElementById('btnCreateLiveSessionWrapper');
+				if (isChecked) {
+					isLiveMode = true;
+					document.querySelectorAll('.map-section').forEach(el => el.classList.add('live-mode'));
+					if (wrapper) {
+						wrapper.style.width = '36px';
+						wrapper.style.opacity = '1';
+						wrapper.style.marginLeft = '4px';
+					}
+					loadMapData();
+				} else {
+					isLiveMode = false;
+					document.querySelectorAll('.map-section').forEach(el => el.classList.remove('live-mode'));
+					if (wrapper) {
+						wrapper.style.width = '0';
+						wrapper.style.opacity = '0';
+						wrapper.style.marginLeft = '0';
+					}
+					loadMapData();
+				}
+			});
+		});
+	}
+
+	const btnCreateLiveSessionGlobal = document.getElementById('btnCreateLiveSessionGlobal');
+	if (btnCreateLiveSessionGlobal) {
+		btnCreateLiveSessionGlobal.addEventListener('click', () => {
+			openCreateLiveSessionUI();
 		});
 	}
 });
-
-async function handleLiveToggleOn(cityId, checkboxEl) {
-	isLiveMode = true;
-
-	const mapSection = document.getElementById('mapSection');
-	if (mapSection) mapSection.classList.add('live-mode');
-
-	document.querySelectorAll('input[id^="toggleActive-"]').forEach(input => {
-		if (input.id !== `toggleActive-${cityId}`) input.checked = true;
-	});
-
-	await loadMapData();
-
-	const { data: { user } } = await supabase.auth.getUser();
-	if (!user) return;
-
-	const { data: hasSession } = await supabase.rpc('has_recent_session', { p_user_id: user.id });
-
-	if (hasSession) {
-		const { data: sessionData } = await supabase
-			.from('public_live_sessions')
-			.select('*')
-			.eq('user_id', user.id)
-			.maybeSingle();
-
-		if (sessionData) {
-			openLiveSessionModal(sessionData);
-		}
-	} else {
-		openCreateLiveSessionUI();
-	}
-}
 
 // Yeni Modal Dinleyicileri
 document.addEventListener('DOMContentLoaded', () => {
@@ -1332,7 +1313,7 @@ function closeCustomModal(modalId) {
 	modal.classList.remove('active');
 	setTimeout(() => {
 		modal.style.display = 'none';
-		document.body.style.overflow = '';
+		unlockScroll();
 	}, 350);
 }
 
@@ -1387,7 +1368,7 @@ async function openCreateLiveSessionUI() {
 
 	document.getElementById('liveDrinkTimeInput').value = '';
 	document.getElementById('liveNoteInput').value = '';
-	document.body.style.overflow = 'hidden';
+	lockScroll();
 	const modal = document.getElementById('createLiveSessionModal');
 	modal.style.display = 'flex';
 	setTimeout(() => { modal.classList.add('active'); }, 10);
@@ -1429,7 +1410,7 @@ async function deleteLiveSession(sessionId) {
 	if (!user) return;
 
 	const { error } = await supabase.from('live_sessions')
-		.delete()
+		.update({ status: 'deleted' })
 		.eq('id', sessionId)
 		.eq('user_id', user.id);
 
@@ -1476,7 +1457,7 @@ async function openLiveSessionModal(session) {
 		deleteBtn.style.display = 'none';
 	}
 
-	document.body.style.overflow = 'hidden';
+	lockScroll();
 	const modal = document.getElementById('liveSessionModal');
 	modal.style.display = 'flex';
 	setTimeout(() => { modal.classList.add('active'); }, 10);
@@ -1550,4 +1531,99 @@ function renderLivePins(sessions, cityId) {
 	});
 }
 
+/* ==============================================================
+   ŞEHİR GÖRÜNÜMÜ AYARLARI (CITY SETTINGS)
+============================================================== */
+function applyCityVisibility() {
+	let visibleCities = [];
+	try {
+		const stored = localStorage.getItem('visible_cities_v1');
+		if (stored) {
+			visibleCities = JSON.parse(stored);
+		} else {
+			visibleCities = CITIES.map(c => c.id);
+		}
+	} catch (e) {
+		visibleCities = CITIES.map(c => c.id);
+	}
 
+	CITIES.forEach(city => {
+		const container = document.getElementById(`cityContainer-${city.id}`);
+		if (container) {
+			if (visibleCities.includes(city.id)) {
+				container.style.display = 'block';
+			} else {
+				container.style.display = 'none';
+			}
+		}
+	});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	const btnCitySettings = document.getElementById('btnCitySettings');
+	const citySettingsModal = document.getElementById('citySettingsModal');
+	const cityTogglesContainer = document.getElementById('cityTogglesContainer');
+	const closeCitySettingsBtn = document.getElementById('closeCitySettingsBtn');
+	const citySettingsModalOverlay = document.getElementById('citySettingsModalOverlay');
+
+	if (btnCitySettings && citySettingsModal && cityTogglesContainer) {
+		btnCitySettings.addEventListener('click', () => {
+			let visibleCities = [];
+			try {
+				const stored = localStorage.getItem('visible_cities_v1');
+				if (stored) visibleCities = JSON.parse(stored);
+				else visibleCities = CITIES.map(c => c.id);
+			} catch (e) {
+				visibleCities = CITIES.map(c => c.id);
+			}
+
+			cityTogglesContainer.innerHTML = '';
+			CITIES.forEach(city => {
+				const item = document.createElement('label');
+				item.className = 'city-toggle-item';
+				const span = document.createElement('span');
+				span.innerText = city.name;
+				const input = document.createElement('input');
+				input.type = 'checkbox';
+				input.value = city.id;
+				input.checked = visibleCities.includes(city.id);
+				input.style.width = '18px';
+				input.style.height = '18px';
+				input.style.accentColor = 'var(--accent-color)';
+				input.style.cursor = 'pointer';
+				
+				item.appendChild(span);
+				item.appendChild(input);
+				cityTogglesContainer.appendChild(item);
+
+				input.addEventListener('change', () => {
+					let currentVisible = Array.from(cityTogglesContainer.querySelectorAll('input:checked')).map(cb => cb.value);
+					if (currentVisible.length === 0) {
+						// En az bir tane seçili kalmalı
+						input.checked = true;
+						return;
+					}
+					localStorage.setItem('visible_cities_v1', JSON.stringify(currentVisible));
+					applyCityVisibility();
+				});
+			});
+
+			lockScroll();
+			citySettingsModal.style.display = 'flex';
+			setTimeout(() => { citySettingsModal.classList.add('active'); }, 10);
+		});
+	}
+
+	const closeCitySettings = () => {
+		if (citySettingsModal) {
+			citySettingsModal.classList.remove('active');
+			setTimeout(() => {
+				citySettingsModal.style.display = 'none';
+				unlockScroll();
+			}, 350);
+		}
+	};
+
+	if (closeCitySettingsBtn) closeCitySettingsBtn.addEventListener('click', closeCitySettings);
+	if (citySettingsModalOverlay) citySettingsModalOverlay.addEventListener('click', closeCitySettings);
+});
