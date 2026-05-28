@@ -1561,8 +1561,13 @@ async function deleteLiveSession(sessionId) {
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) return;
 
-	const { error } = await supabase.from('live_sessions')
-		.update({ status: 'deleted' })
+	// İlanı silme / iptal etme fonksiyonunun içi
+	const { error } = await supabase
+		.from('live_sessions')
+		.update({
+			status: 'deleted',
+			user_id: user.id // CRITICAL: RLS'in 'new row' doğrulamasını geçmesi için bu şart!
+		})
 		.eq('id', sessionId)
 		.eq('user_id', user.id);
 
