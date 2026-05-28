@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<title>bira.</title>
+	<title>meyve suyu.</title>
 	<link rel="stylesheet" href="./css/style.css">
 	<script>
 		// Sayfa yüklenirken "Giriş Yap" butonunun 1 saniye görünüp kaybolmasını (flicker) önlemek için
@@ -60,7 +60,7 @@
 	<header>
 		<div class="logo-container">
 			<div class="fire" id="fire"></div>
-			<div class="logo">bira</div>
+			<div class="logo">meyvesuyu</div>
 		</div>
 		<button class="btn-twitter" id="loginBtn">
 			<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
@@ -90,38 +90,46 @@
 
 		<!-- Map Section Header -->
 		<div class="map-section-header" id="mapSectionHeader" style="display: none;">
-			<h1>Bira Topluluk Haritası</h1>
-			<p>Burada şehrindeki genel içicileri ve anlık içicileri görebilirsin.</p>
-			
+			<h1>Meyve Suyu Topluluk Haritası</h1>
+			<p>Burada şehrindeki genel meyvesuyu severleri ve anlık içenleri görebilirsin.</p>
+
 			<!-- Global Harita Kontrolleri -->
-			<div class="global-map-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
-				
+			<div class="global-map-controls"
+				style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
+
 				<!-- Sol Taraf (Ayarlar ve Yenile) -->
 				<div style="display: flex; gap: 8px;">
-					<button id="btnCitySettings" title="Şehir Görünümü" class="btn-map-refresh" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
+					<button id="btnCitySettings" title="Şehir Görünümü" class="btn-map-refresh"
+						style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
 						<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+							<path stroke-linecap="round" stroke-linejoin="round"
+								d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
 							<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
 						</svg>
 					</button>
-					<button id="btnGlobalRefresh" class="btn-map-refresh" title="Haritayı Yenile" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
+					<button id="btnGlobalRefresh" class="btn-map-refresh" title="Haritayı Yenile"
+						style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
 						<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+							<path stroke-linecap="round" stroke-linejoin="round"
+								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
 						</svg>
 					</button>
 				</div>
-				
+
 				<!-- Sağ Taraf (Anlık Switch ve İlan Ver) -->
 				<div style="display: flex; gap: 12px; align-items: center;">
-					<div class="toggle-switch-wrapper" id="globalLiveToggleWrapper" style="opacity: 1; cursor: pointer; margin: 0;">
+					<div class="toggle-switch-wrapper" id="globalLiveToggleWrapper"
+						style="opacity: 1; cursor: pointer; margin: 0;">
 						<span class="toggle-label" style="font-size: 15px;">Anlık Mod</span>
 						<label class="switch">
 							<input type="checkbox" id="globalLiveToggle">
 							<span class="slider round"></span>
 						</label>
 					</div>
-					<div id="btnCreateLiveSessionWrapper" style="width: 0; opacity: 0; overflow: hidden; transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center;">
-						<button id="btnCreateLiveSessionGlobal" class="btn-main" title="İlan Ver" style="padding: 0; width: 36px; height: 36px; min-width: 36px; border-radius: 50%; margin: 0; display: flex; align-items: center; justify-content: center;">
+					<div id="btnCreateLiveSessionWrapper"
+						style="width: 0; opacity: 0; overflow: hidden; transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center;">
+						<button id="btnCreateLiveSessionGlobal" class="btn-main" title="İlan Ver"
+							style="padding: 0; width: 36px; height: 36px; min-width: 36px; border-radius: 50%; margin: 0; display: flex; align-items: center; justify-content: center;">
 							<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 							</svg>
@@ -144,8 +152,12 @@
 			<div id="step-1" class="setup-step active">
 				<h3>Bize biraz zevklerinden bahset</h3>
 
+				<div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14.5px; color: #991b1b; line-height: 1.5;">
+					<strong>Önemli Uyarı:</strong> Seçtiğin konum bilgileri haritada diğer kullanıcılara açık olarak gösterilecek ve profilini oluşturduktan sonra <strong>kesinlikle değiştirilemeyecektir</strong>. Lütfen doğru konumları seçtiğinden emin ol.
+				</div>
+
 				<div class="form-group">
-					<label>Yaşadığın / Bira İçmeyi Sevdiğin Konumlar (En fazla 3 adet ekleyebilirsin)</label>
+					<label>Yaşadığın / Meyve Suyu İçmeyi Sevdiğin Konumlar (En fazla 3 adet ekleyebilirsin)</label>
 					<div class="location-picker-wrapper">
 						<select id="citySelect" class="form-select">
 							<option value="" disabled selected>Şehir Seçin</option>
@@ -170,27 +182,27 @@
 				</div>
 
 				<div class="form-group">
-					<label>Favori Bira Tarzların</label>
+					<label>Favori Meyve Suyu Tarzların</label>
 					<div class="pill-group" id="beerStylesGroup">
-						<div class="pill-btn" data-value="Hafif & Ferahlatıcı (Lager/Pilsner)">Hafif & Ferahlatıcı</div>
-						<div class="pill-btn" data-value="Meyveli & Aromatik (IPA/Ale)">Meyveli & Aromatik</div>
-						<div class="pill-btn" data-value="Koyu & Kavruk (Stout/Porter)">Koyu & Kavruk</div>
-						<div class="pill-btn" data-value="Yumuşak & Buğday (Wheat)">Yumuşak & Buğday</div>
-						<div class="pill-btn" data-value="Ekşi & Alışılmışın Dışında (Sour)">Ekşi & Farklı</div>
+						<div class="pill-btn" data-value="Narenciye (Portakal/Limon)">Narenciye</div>
+						<div class="pill-btn" data-value="Tropikal (Mango/Ananas)">Tropikal</div>
+						<div class="pill-btn" data-value="Kırmızı Meyve (Çilek/Vişne)">Kırmızı Meyve</div>
+						<div class="pill-btn" data-value="Yeşil & Ferah (Elma/Kivi)">Yeşil & Ferah</div>
+						<div class="pill-btn" data-value="Egzotik & Farklı (Nar/Şeftali)">Egzotik & Farklı</div>
 					</div>
 				</div>
 
 				<div class="form-group">
-					<label>Tükettiğin Diğer Alkoller (İstediğin kadar seçebilirsin)</label>
+					<label>İçtiğin Diğer İçecekler (İstediğin kadar seçebilirsin)</label>
 					<div class="pill-group" id="otherAlcoholsGroup">
-						<div class="pill-btn" data-value="Rakı">Rakı</div>
-						<div class="pill-btn" data-value="Şarap">Şarap</div>
-						<div class="pill-btn" data-value="Viski">Viski</div>
-						<div class="pill-btn" data-value="Cin">Cin</div>
-						<div class="pill-btn" data-value="Votka">Votka</div>
-						<div class="pill-btn" data-value="Tekila">Tekila</div>
-						<div class="pill-btn" data-value="Kokteyl">Kokteyl</div>
-						<div class="pill-btn" data-value="İçmiyorum">Başka Alkol Tüketmiyorum</div>
+						<div class="pill-btn" data-value="Çay">Çay</div>
+						<div class="pill-btn" data-value="Kahve">Kahve</div>
+						<div class="pill-btn" data-value="Americano">Americano</div>
+						<div class="pill-btn" data-value="Soda">Soda</div>
+						<div class="pill-btn" data-value="Ayran">Ayran</div>
+						<div class="pill-btn" data-value="Latte">Latte</div>
+						<div class="pill-btn" data-value="Filtre Kahve">Filtre Kahve</div>
+						<div class="pill-btn" data-value="İçmiyorum">Başka İçecek Tüketmiyorum</div>
 					</div>
 				</div>
 
@@ -203,7 +215,7 @@
 				<h3>Son birkaç detay</h3>
 
 				<div class="form-group">
-					<label>Ne Sıklıkla Bira İçersin?</label>
+					<label>Ne Sıklıkla Meyve Suyu İçersin?</label>
 					<div class="pill-group" id="frequencyGroup">
 						<div class="pill-btn" data-value="Her gün">Her Gün</div>
 						<div class="pill-btn" data-value="Neredeyse her gün">Neredeyse Her Gün</div>
@@ -217,29 +229,36 @@
 					<label>En Sevdiğin İçim Ortamı Nedir?</label>
 					<div class="pill-group" id="environmentGroup">
 						<div class="pill-btn" data-value="Evde / Yalnız">Evde / Kendi Başıma</div>
-						<div class="pill-btn" data-value="Bar / Pub">Bar / Pub Ortamı</div>
+						<div class="pill-btn" data-value="Kafe / Pastane">Kafe / Pastane</div>
 						<div class="pill-btn" data-value="Arkadaşlarla / Kalabalık">Arkadaşlarla / Kalabalık</div>
 						<div class="pill-btn" data-value="Açık Hava / Sahil">Açık Hava / Sahil</div>
 					</div>
 				</div>
 
 				<div class="form-group">
-					<label>Tercih Ettiğin Alkol Oranı (ABV)</label>
+					<label>Tercih Ettiğin Meyve Oranı</label>
 					<div class="pill-group" id="abvGroup">
-						<div class="pill-btn" data-value="Hafif (%0 - %4)">Hafif (%0 - %4)</div>
-						<div class="pill-btn" data-value="Standart (%4 - %6)">Standart (%4 - %6)</div>
-						<div class="pill-btn" data-value="Sert (%6+)">Sert (%6+)</div>
+						<div class="pill-btn" data-value="Düşük (%25 - %50)">Düşük (%25 - %50)</div>
+						<div class="pill-btn" data-value="Orta (%50 - %75)">Orta (%50 - %75)</div>
+						<div class="pill-btn" data-value="Yüksek (%75 - %100)">Yüksek (%75 - %100)</div>
 					</div>
 				</div>
 
 				<div class="form-group">
-					<label>Biranın Yanında En Çok Neyi Seversin?</label>
+					<label>Meyve Suyunun Yanında En Çok Neyi Seversin?</label>
 					<div class="pill-group" id="snackGroup">
 						<div class="pill-btn" data-value="Tuzlu Fıstık / Cips">Çerez / Cips</div>
 						<div class="pill-btn" data-value="Patates Kızartması / Hamburger">Patates / Hamburger</div>
 						<div class="pill-btn" data-value="Yemek (Et/Pizza)">Güzel Bir Yemek</div>
-						<div class="pill-btn" data-value="Sadece bira">Hiçbir Şey / Sadece Bira</div>
+						<div class="pill-btn" data-value="Sadece meyve suyu">Hiçbir Şey / Sadece Meyve Suyu</div>
 					</div>
+				</div>
+
+				<div class="form-group" style="margin-top: 10px; flex-direction: row; align-items: flex-start; gap: 10px;">
+					<input type="checkbox" id="kvkkCheck" style="margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer;">
+					<label for="kvkkCheck" style="font-size: 14px; color: var(--secondary-text); font-weight: 500; cursor: pointer; line-height: 1.5; margin-bottom: 0;">
+						<a href="#" id="openKvkkModalBtn" style="color: var(--accent-color); text-decoration: underline; font-weight: 600;">KVKK Aydınlatma Metni</a>'ni okudum, anladım ve profil bilgilerimin harita üzerinde diğer kullanıcılarla paylaşılmasını onaylıyorum.
+					</label>
 				</div>
 
 				<button id="saveProfileBtn" class="btn-main">Kurulumu Tamamla</button>
@@ -287,11 +306,11 @@
 						<div class="pref-tags" id="prefLocations"></div>
 					</div>
 					<div class="pref-item">
-						<div class="pref-label">Favori Bira Tarzları</div>
+						<div class="pref-label">Favori Meyve Suyu Tarzları</div>
 						<div class="pref-tags" id="prefBeerStyles"></div>
 					</div>
 					<div class="pref-item">
-						<div class="pref-label">Diğer Alkol Tercihleri</div>
+						<div class="pref-label">Diğer İçecek Tercihleri</div>
 						<div class="pref-tags" id="prefOtherAlcohols"></div>
 					</div>
 					<div class="pref-row">
@@ -306,7 +325,7 @@
 					</div>
 					<div class="pref-row">
 						<div class="pref-item half">
-							<div class="pref-label">Alkol Oranı (ABV)</div>
+							<div class="pref-label">Meyve Oranı</div>
 							<span class="pref-value-badge" id="prefAbv"></span>
 						</div>
 						<div class="pref-item half">
@@ -322,7 +341,7 @@
 		</div>
 	</div>
 
-	<!-- Biraseverler Listesi Modalı (Google Material 3 / iOS Bottom Sheet Esintili) -->
+	<!-- Meyvesuyu Severler Listesi Modalı (Google Material 3 / iOS Bottom Sheet Esintili) -->
 	<div class="profile-modal" id="drinkersModal" style="display: none;">
 		<div class="profile-modal-overlay" id="drinkersModalOverlay"></div>
 		<div class="profile-modal-content">
@@ -334,11 +353,11 @@
 				</button>
 				<h2
 					style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px;">
-					İstanbul'daki Biraseverler</h2>
+					İstanbul'daki Meyvesuyu Severler</h2>
 			</div>
 			<div class="profile-modal-body" style="padding-top: 10px;">
 				<div id="drinkersListContainer" class="drinkers-list-container">
-					<!-- JavaScript ile biraseverler listesi buraya eklenecektir -->
+					<!-- JavaScript ile meyvesuyu severler listesi buraya eklenecektir -->
 				</div>
 			</div>
 		</div>
@@ -444,13 +463,49 @@
 						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 					</svg>
 				</button>
-				<h2 style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">Şehir Görünümü</h2>
+				<h2
+					style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">
+					Şehir Görünümü</h2>
 			</div>
 			<div class="profile-modal-body">
-				<p style="text-align: center; color: var(--secondary-text); font-size: 14.5px; margin-bottom: 20px;">Ana sayfada görmek istediğin şehirleri seç.</p>
-				<div class="city-toggles-container" id="cityTogglesContainer" style="display: flex; flex-direction: column; gap: 12px;">
+				<p style="text-align: center; color: var(--secondary-text); font-size: 14.5px; margin-bottom: 20px;">Ana sayfada
+					görmek istediğin şehirleri seç.</p>
+				<div class="city-toggles-container" id="cityTogglesContainer"
+					style="display: flex; flex-direction: column; gap: 12px;">
 					<!-- Şehir Checkbox'ları JavaScript ile eklenecek -->
 				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- KVKK Modal -->
+	<div class="profile-modal" id="kvkkModal" style="display: none;">
+		<div class="profile-modal-overlay" id="kvkkModalOverlay"></div>
+		<div class="profile-modal-content" style="max-height: 90vh;">
+			<div class="profile-modal-header">
+				<button class="btn-close-modal" id="closeKvkkBtn" title="Kapat">
+					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+				<h2 style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">
+					KVKK Aydınlatma Metni
+				</h2>
+			</div>
+			<div class="profile-modal-body" style="overflow-y: auto; text-align: left; padding-top: 0; font-size: 14.5px; line-height: 1.6; color: var(--text-color);">
+				<p style="margin-bottom: 12px;"><strong>1. Veri Sorumlusunun Kimliği</strong></p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Meyve Suyu Haritası ("Uygulama") olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz veri sorumlusu sıfatıyla aşağıda açıklanan amaçlar kapsamında ve hukuka uygun olarak işlenecektir.</p>
+				
+				<p style="margin-bottom: 12px;"><strong>2. İşlenen Kişisel Verileriniz ve İşlenme Amacı</strong></p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Uygulamaya kayıt olurken Twitter (X) üzerinden sağladığınız profil resminiz, adınız, kullanıcı adınız ile uygulama içerisinde kendi rızanızla seçtiğiniz <strong>konum bilgileriniz</strong>, içecek tercihleriniz ve diğer profil detaylarınız; uygulamanın temel işlevi olan "harita üzerinde diğer kullanıcılarla etkileşim kurma ve görünürlük sağlama" amacıyla işlenmekte ve harita üzerinde diğer kullanıcılara <strong>açık bir şekilde</strong> gösterilmektedir.</p>
+
+				<p style="margin-bottom: 12px;"><strong>3. Kişisel Verilerin Aktarılması</strong></p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Seçmiş olduğunuz konum bilgileri ve profil detaylarınız, platformun doğası gereği uygulamaya kayıtlı diğer tüm kullanıcılar tarafından harita arayüzünde görüntülenebilecektir. Verileriniz, yasal zorunluluklar dışında üçüncü kişi veya kurumlarla paylaşılmamaktadır.</p>
+
+				<p style="margin-bottom: 12px;"><strong>4. Konum Bilgisinin Değiştirilememesi</strong></p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Kayıt aşamasında seçtiğiniz konum bilgileri, platformun kötüye kullanımını önlemek amacıyla profil oluşturulduktan sonra <strong>değiştirilemez</strong> olarak kaydedilmektedir. Lütfen konum tercihlerinizi bu durumu göz önünde bulundurarak yapınız.</p>
+
+				<button id="acceptKvkkBtn" class="btn-main" style="margin-top: 24px;">Okudum, Onaylıyorum</button>
 			</div>
 		</div>
 	</div>

@@ -101,7 +101,7 @@ header {
 
 .logo {
 	font-family: 'SF Pro Display', sans-serif;
-	font-size: 2.6rem;
+	font-size: 1.5rem;
 	font-weight: 800;
 	letter-spacing: -0.6px;
 	color: #1c1c1c;
@@ -171,7 +171,7 @@ header {
 /* Yeni Fire Efekti (GIF) */
 .fire {
 	position: absolute;
-	bottom: -1px;
+	bottom: 5px;
 	left: -4px;
 	width: calc(100% + 8px);
 	height: 500px;
@@ -265,20 +265,20 @@ header {
 	}
 
 	.logo-container {
-		padding: 6px 12px;
+		padding: 15px 12px;
 	}
 
 	.logo {
-		font-size: 2rem;
+		font-size: 1.25rem;
 		/* Scaled down logo text */
-		letter-spacing: -1px;
+		letter-spacing: -0.5px;
 	}
 
 	.fire {
-		font-size: 8px;
+		font-size: 80px;
 		/* Scaled down fire base unit */
 		bottom: 0px;
-		height: 500px;
+		height: 400px;
 	}
 
 	.btn-twitter {
@@ -1103,7 +1103,7 @@ header {
 
 .map-section-header h1 {
 	font-family: 'SF Pro Display', sans-serif;
-	font-size: 1.9rem;
+	font-size: 1.5rem;
 	font-weight: 800;
 	letter-spacing: -0.7px;
 	color: var(--text-color);
@@ -1646,4 +1646,4 @@ input:checked+.slider:before {
 	font-size: 15px;
 	font-weight: 600;
 	color: var(--text-color);
-}
+}

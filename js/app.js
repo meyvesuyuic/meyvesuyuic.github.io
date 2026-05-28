@@ -9,24 +9,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const VALID_CITIES = ['İstanbul', 'Ankara', 'İzmir', 'Eskişehir'];
 
 const VALID_BEER_STYLES = [
-  'Hafif & Ferahlatıcı (Lager/Pilsner)',
-  'Meyveli & Aromatik (IPA/Ale)',
-  'Koyu & Kavruk (Stout/Porter)',
-  'Yumuşak & Buğday (Wheat)',
-  'Ekşi & Alışılmışın Dışında (Sour)'
+  'Narenciye (Portakal/Limon)',
+  'Tropikal (Mango/Ananas)',
+  'Kırmızı Meyve (Çilek/Vişne)',
+  'Yeşil & Ferah (Elma/Kivi)',
+  'Egzotik & Farklı (Nar/Şeftali)'
 ];
 const VALID_OTHER_ALCOHOLS = [
-  'Rakı','Şarap','Viski','Cin','Votka','Tekila','Kokteyl','İçmiyorum'
+  'Çay','Kahve','Americano','Soda','Ayran','Latte','Filtre Kahve','İçmiyorum'
 ];
 const VALID_FREQUENCY = [
   'Her gün','Neredeyse her gün','Haftada birkaç','Sadece hafta sonları','Ayda yılda bir'
 ];
 const VALID_ENVIRONMENT = [
-  'Evde / Yalnız','Bar / Pub','Arkadaşlarla / Kalabalık','Açık Hava / Sahil'
+  'Evde / Yalnız','Kafe / Pastane','Arkadaşlarla / Kalabalık','Açık Hava / Sahil'
 ];
-const VALID_ABV = ['Hafif (%0 - %4)', 'Standart (%4 - %6)', 'Sert (%6+)'];
+const VALID_ABV = ['Düşük (%25 - %50)', 'Orta (%50 - %75)', 'Yüksek (%75 - %100)'];
 const VALID_SNACK = [
-  'Tuzlu Fıstık / Cips','Patates Kızartması / Hamburger','Yemek (Et/Pizza)','Sadece bira'
+  'Tuzlu Fıstık / Cips','Patates Kızartması / Hamburger','Yemek (Et/Pizza)','Sadece meyve suyu'
 ];
 
 const loginBtn = document.getElementById('loginBtn');
@@ -394,11 +394,11 @@ function initSetupLogic(user, twitterData) {
 			return;
 		}
 		if (selectedBeerStyles.length === 0) {
-			alert("Lütfen en az 1 favori bira tarzı seçiniz.");
+			alert("Lütfen en az 1 favori meyve suyu tarzı seçiniz.");
 			return;
 		}
 		if (selectedOtherAlcohols.length === 0) {
-			alert("Lütfen diğer alkol tercihlerinizi seçiniz.");
+			alert("Lütfen diğer içecek tercihlerinizi seçiniz.");
 			return;
 		}
 		// Adım 2'ye geçiş yap
@@ -410,6 +410,12 @@ function initSetupLogic(user, twitterData) {
 
 	// Adım 2 Doğrulama ve Kaydetme
 	saveProfileBtn.onclick = async () => {
+		const kvkkCheck = document.getElementById('kvkkCheck');
+		if (kvkkCheck && !kvkkCheck.checked) {
+			alert("Lütfen KVKK Aydınlatma Metni'ni okuyup onaylayınız.");
+			return;
+		}
+
 		if (saveProfileBtn._isSubmitting) return;
 		saveProfileBtn._isSubmitting = true;
 		saveProfileBtn.disabled = true;
@@ -434,19 +440,19 @@ function initSetupLogic(user, twitterData) {
 		}
 		const abv = getPillValue('abvGroup');
 		if (!abv) {
-			alert("Lütfen tercih ettiğiniz alkol oranını (ABV) seçiniz.");
+			alert("Lütfen tercih ettiğiniz meyve oranını seçiniz.");
 			resetBtn();
 			return;
 		}
 		const snack = getPillValue('snackGroup');
 		if (!snack) {
-			alert("Lütfen biranın yanındaki atıştırmalık tercihinizi seçiniz.");
+			alert("Lütfen meyve suyunun yanındaki atıştırmalık tercihinizi seçiniz.");
 			resetBtn();
 			return;
 		}
 		const frequency = getPillValue('frequencyGroup');
 		if (!frequency) {
-			alert("Lütfen bira içme sıklığınızı seçiniz.");
+			alert("Lütfen meyve suyu içme sıklığınızı seçiniz.");
 			resetBtn();
 			return;
 		}
@@ -456,11 +462,11 @@ function initSetupLogic(user, twitterData) {
 		const safeLocations = selectedLocations.slice(0, 3);
 
 		if (safeStyles.length === 0) {
-			alert("Lütfen geçerli bir bira tarzı seçiniz.");
+			alert("Lütfen geçerli bir meyve suyu tarzı seçiniz.");
 			resetBtn(); return;
 		}
 		if (safeAlcohols.length === 0) {
-			alert("Lütfen geçerli bir alkol tercihi seçiniz.");
+			alert("Lütfen geçerli bir içecek tercihi seçiniz.");
 			resetBtn(); return;
 		}
 		if (!VALID_FREQUENCY.includes(frequency)) {
@@ -637,7 +643,7 @@ async function openProfileModal(user) {
 		prefLocations.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
 	}
 
-	// Bira Tarzları
+	// Meyve Suyu Tarzları
 	prefBeerStyles.innerHTML = '';
 	if (profileData.favorite_styles && profileData.favorite_styles.length > 0) {
 		profileData.favorite_styles.forEach(style => {
@@ -650,17 +656,17 @@ async function openProfileModal(user) {
 		prefBeerStyles.innerHTML = '<span class="pref-tag">Belirtilmemiş</span>';
 	}
 
-	// Diğer Alkoller
+	// Diğer İçecekler
 	prefOtherAlcohols.innerHTML = '';
 
-	const alcoholColors = {
-		"Rakı": { bg: "#e0f2fe", border: "#0ea5e9", color: "#0369a1" },
-		"Şarap": { bg: "#ffe4e6", border: "#f43f5e", color: "#be185d" },
-		"Viski": { bg: "#fef3c7", border: "#f59e0b", color: "#b45309" },
-		"Cin": { bg: "#d1fae5", border: "#10b981", color: "#047857" },
-		"Votka": { bg: "#f1f5f9", border: "#64748b", color: "#475569" },
-		"Tekila": { bg: "#fef9c3", border: "#eab308", color: "#a16207" },
-		"Kokteyl": { bg: "#f3e8ff", border: "#a855f7", color: "#6d28d9" },
+	const beverageColors = {
+		"Çay": { bg: "#d1fae5", border: "#10b981", color: "#047857" },
+		"Kahve": { bg: "#fef3c7", border: "#d97706", color: "#92400e" },
+		"Americano": { bg: "#f5f5f4", border: "#57534e", color: "#292524" },
+		"Soda": { bg: "#e0f2fe", border: "#0ea5e9", color: "#0369a1" },
+		"Ayran": { bg: "#f1f5f9", border: "#64748b", color: "#475569" },
+		"Latte": { bg: "#fff7ed", border: "#f59e0b", color: "#b45309" },
+		"Filtre Kahve": { bg: "#f3e8ff", border: "#a855f7", color: "#6d28d9" },
 		"İçmiyorum": { bg: "#f5f5f4", border: "#78716c", color: "#57504b" }
 	};
 
@@ -670,11 +676,11 @@ async function openProfileModal(user) {
 			span.className = 'pref-tag';
 			span.innerText = alc;
 
-			// Her alkol seçeneği için pastel renk setini uygula
-			if (alcoholColors[alc]) {
-				span.style.backgroundColor = alcoholColors[alc].bg;
-				span.style.borderColor = alcoholColors[alc].border;
-				span.style.color = alcoholColors[alc].color;
+			// Her içecek seçeneği için pastel renk setini uygula
+			if (beverageColors[alc]) {
+				span.style.backgroundColor = beverageColors[alc].bg;
+				span.style.borderColor = beverageColors[alc].border;
+				span.style.color = beverageColors[alc].color;
 				span.style.fontWeight = '600';
 			}
 
@@ -746,6 +752,50 @@ if (logoutBtnModal) {
 		logoutBtn.click();
 	});
 }
+
+// KVKK Modal Mantığı
+const kvkkModal = document.getElementById('kvkkModal');
+const kvkkModalOverlay = document.getElementById('kvkkModalOverlay');
+const closeKvkkBtn = document.getElementById('closeKvkkBtn');
+const acceptKvkkBtn = document.getElementById('acceptKvkkBtn');
+
+function openKvkkModal(e) {
+	if (e) e.preventDefault();
+	lockScroll();
+	kvkkModal.style.display = 'flex';
+	setTimeout(() => {
+		kvkkModal.classList.add('active');
+	}, 10);
+}
+
+function closeKvkkModal() {
+	kvkkModal.classList.remove('active');
+	kvkkModal.addEventListener('transitionend', () => {
+		if (!kvkkModal.classList.contains('active')) {
+			kvkkModal.style.display = 'none';
+			unlockScroll();
+		}
+	}, { once: true });
+}
+
+// Global scope'da openKvkkModalBtn yakalamak için event delegation veya document listener kullanıyoruz
+// çünkü element initSetupLogic içinde veya statik olabilir.
+document.addEventListener('click', (e) => {
+	if (e.target && e.target.id === 'openKvkkModalBtn') {
+		openKvkkModal(e);
+	}
+});
+
+if (closeKvkkBtn) closeKvkkBtn.addEventListener('click', closeKvkkModal);
+if (kvkkModalOverlay) kvkkModalOverlay.addEventListener('click', closeKvkkModal);
+if (acceptKvkkBtn) {
+	acceptKvkkBtn.addEventListener('click', () => {
+		const kvkkCheck = document.getElementById('kvkkCheck');
+		if (kvkkCheck) kvkkCheck.checked = true;
+		closeKvkkModal();
+	});
+}
+
 // Fire Effect Particles Generation (CSS Particle iptal edildi, fire.gif kullanılıyor)
 /*
 document.addEventListener('DOMContentLoaded', () => {
@@ -1096,11 +1146,11 @@ function openDrinkersModal(cityId) {
 	// Modaldaki başlığı güncelle
 	const modalTitle = modal.querySelector('h2');
 	if (modalTitle) {
-		modalTitle.innerHTML = `${cityName}'daki Biraseverler <span class="drinker-count-badge">${usersInCity.length}</span>`;
+		modalTitle.innerHTML = `${cityName}'daki Meyvesuyu Severler <span class="drinker-count-badge">${usersInCity.length}</span>`;
 	}
 
 	if (usersInCity.length === 0) {
-		container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); margin-top: 20px;">Henüz ${cityName}'da kayıtlı birasever bulunmuyor.</p>`;
+		container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); margin-top: 20px;">Henüz ${cityName}'da kayıtlı meyvesuyu sever bulunmuyor.</p>`;
 	} else {
 		renderDrinkersPage(usersInCity, container);
 	}
