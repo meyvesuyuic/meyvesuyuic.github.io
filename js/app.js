@@ -24,14 +24,14 @@ const VALID_OTHER_ALCOHOLS = [
 	'Çay', 'Kahve', 'Americano', 'Soda', 'Ayran', 'Latte', 'Filtre Kahve', 'İçmiyorum'
 ];
 const VALID_FREQUENCY = [
-	'Her gün', 'Neredeyse her gün', 'Haftada birkaç', 'Sadece hafta sonları', 'Ayda yılda bir'
+	'Her Gün', 'Neredeyse Her Gün', 'Haftada Birkaç', 'Sadece Hafta Sonları', 'Ayda Yılda Bir'
 ];
 const VALID_ENVIRONMENT = [
-	'Evde / Yalnız', 'Kafe / Pastane', 'Arkadaşlarla / Kalabalık', 'Açık Hava / Sahil'
+	'Evde / Kendi Başıma', 'Kafe / Pastane', 'Arkadaşlarla / Kalabalık', 'Açık Hava / Sahil'
 ];
 const VALID_ABV = ['Düşük (%25 - %50)', 'Orta (%50 - %75)', 'Yüksek (%75 - %100)'];
 const VALID_SNACK = [
-	'Tuzlu Fıstık / Cips', 'Patates Kızartması / Hamburger', 'Yemek (Et/Pizza)', 'Sadece meyve suyu'
+	'Çerez / Cips', 'Patates / Hamburger', 'Güzel Bir Yemek', 'Hiçbir Şey / Sadece Meyve Suyu'
 ];
 
 const loginBtn = document.getElementById('loginBtn');
