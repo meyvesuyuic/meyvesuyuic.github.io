@@ -1134,41 +1134,57 @@ function renderMapUsers(cityId, users) {
 		return paths.some(p => p.isPointInFill(pt));
 	}
 
-	// Altın açı: noktaların üst üste binmemesi için
-	const GOLDEN_ANGLE = 137.508;
-	let seq = 0; // Sarmal sırası
+	const placedPoints = [];
 
 	stableUsers.forEach((user, i) => {
-		let svgX, svgY;
-		let found = false;
-		let attempts = 0;
+		let bestX = center.x;
+		let bestY = center.y;
+		let maxClosestDist = -1;
 
-		// Kara parçasına (path içine) denk gelene kadar sarmalda ilerle
-		while (!found && attempts < 1000) {
-			const t = seq / Math.max(total, 5);
-			const r = maxRadius * Math.sqrt(t) * 0.75;
+		// 50 farklı rastgele nokta deneyip diğer kişilere en uzak olanını seçiyoruz (daha fazla deneme = daha iyi dağılım)
+		for (let attempts = 0; attempts < 50; attempts++) {
+			const angle = Math.random() * Math.PI * 2;
+			// Çarpanı 0.95'ten 1.25'e çıkardım ki haritanın en dış köşelerine kadar yayılma özgürlükleri olsun
+			const r = maxRadius * Math.sqrt(Math.random()) * 1.25; 
+			
+			const testX = center.x + r * Math.cos(angle);
+			const testY = center.y + r * Math.sin(angle);
 
-			const angleDeg = seq * GOLDEN_ANGLE;
-			const angleRad = (angleDeg * Math.PI) / 180;
+			if (isInsideLand(testX, testY)) {
+				let closestDist = Infinity;
+				for (const p of placedPoints) {
+					const dx = testX - p.x;
+					const dy = testY - p.y;
+					const dist = Math.sqrt(dx * dx + dy * dy);
+					if (dist < closestDist) {
+						closestDist = dist;
+					}
+				}
 
-			svgX = center.x + r * Math.cos(angleRad);
-			svgY = center.y + r * Math.sin(angleRad);
+				// Eğer ilk noktaysa direkt kabul et
+				if (placedPoints.length === 0) {
+					bestX = testX;
+					bestY = testY;
+					break;
+				}
 
-			if (isInsideLand(svgX, svgY)) {
-				found = true;
+				// En uzak mesafeyi sunan noktayı en iyi aday olarak kaydet
+				if (closestDist > maxClosestDist) {
+					maxClosestDist = closestDist;
+					bestX = testX;
+					bestY = testY;
+				}
 			}
-			seq++;
-			attempts++;
 		}
 
-		if (!found) {
-			svgX = center.x;
-			svgY = center.y;
-		}
+		placedPoints.push({ x: bestX, y: bestY });
+
+		let svgX = bestX;
+		let svgY = bestY;
 
 		// SVG koordinatlarını container yüzdesine çevir
-		const leftPercent = ((svgX - viewBox.x) / viewBox.w) * 100;
-		const topPercent = ((svgY - viewBox.y) / viewBox.h) * 100;
+		let leftPercent = ((svgX - viewBox.x) / viewBox.w) * 100;
+		let topPercent = ((svgY - viewBox.y) / viewBox.h) * 100;
 
 		const pin = document.createElement('div');
 		pin.className = 'map-user-pin';
