@@ -1566,8 +1566,8 @@ async function deleteLiveSession(sessionId) {
 		.from('live_sessions')
 		.update({
 			status: 'deleted',
-			user_id: user.id // CRITICAL: RLS'in 'new row' doğrulamasını geçmesi için bu şart!
-		})
+			user_id: user.id
+		}, { count: 'none', returning: 'minimal' }) // 🌟 KESİN ÇÖZÜM: Supabase'e satırı geri okuma (SELECT etme) diyoruz!
 		.eq('id', sessionId)
 		.eq('user_id', user.id);
 
