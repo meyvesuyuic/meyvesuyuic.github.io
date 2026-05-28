@@ -9,24 +9,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const VALID_CITIES = ['İstanbul', 'Ankara', 'İzmir', 'Eskişehir'];
 
 const VALID_BEER_STYLES = [
-  'Narenciye (Portakal/Limon)',
-  'Tropikal (Mango/Ananas)',
-  'Kırmızı Meyve (Çilek/Vişne)',
-  'Yeşil & Ferah (Elma/Kivi)',
-  'Egzotik & Farklı (Nar/Şeftali)'
+	'Narenciye (Portakal/Limon)',
+	'Tropikal (Mango/Ananas)',
+	'Kırmızı Meyve (Çilek/Vişne)',
+	'Yeşil & Ferah (Elma/Kivi)',
+	'Egzotik & Farklı (Nar/Şeftali)'
 ];
 const VALID_OTHER_ALCOHOLS = [
-  'Çay','Kahve','Americano','Soda','Ayran','Latte','Filtre Kahve','İçmiyorum'
+	'Çay', 'Kahve', 'Americano', 'Soda', 'Ayran', 'Latte', 'Filtre Kahve', 'İçmiyorum'
 ];
 const VALID_FREQUENCY = [
-  'Her gün','Neredeyse her gün','Haftada birkaç','Sadece hafta sonları','Ayda yılda bir'
+	'Her gün', 'Neredeyse her gün', 'Haftada birkaç', 'Sadece hafta sonları', 'Ayda yılda bir'
 ];
 const VALID_ENVIRONMENT = [
-  'Evde / Yalnız','Kafe / Pastane','Arkadaşlarla / Kalabalık','Açık Hava / Sahil'
+	'Evde / Yalnız', 'Kafe / Pastane', 'Arkadaşlarla / Kalabalık', 'Açık Hava / Sahil'
 ];
 const VALID_ABV = ['Düşük (%25 - %50)', 'Orta (%50 - %75)', 'Yüksek (%75 - %100)'];
 const VALID_SNACK = [
-  'Tuzlu Fıstık / Cips','Patates Kızartması / Hamburger','Yemek (Et/Pizza)','Sadece meyve suyu'
+	'Tuzlu Fıstık / Cips', 'Patates Kızartması / Hamburger', 'Yemek (Et/Pizza)', 'Sadece meyve suyu'
 ];
 
 const loginBtn = document.getElementById('loginBtn');
@@ -927,7 +927,7 @@ function initMap() {
 	}
 	mapSection.style.display = 'block';
 	if (mapSectionHeader) mapSectionHeader.style.display = 'block';
-	
+
 	// Şehir görünürlük ayarlarını uygula
 	applyCityVisibility();
 }
@@ -1453,7 +1453,7 @@ async function openCreateLiveSessionUI() {
 		return;
 	}
 
-	const { data: hasSession } = await supabase.rpc('has_recent_session', { p_user_id: user.id });
+	const { data: hasSession } = await supabase.rpc('has_recent_session');
 	if (hasSession) {
 		const { data: existingSessions } = await supabase
 			.from('public_live_sessions')
@@ -1530,7 +1530,7 @@ async function createLiveSession(city, district, note, drinkTime) {
 		return;
 	}
 
-	const { data: hasSession } = await supabase.rpc('has_recent_session', { p_user_id: user.id });
+	const { data: hasSession } = await supabase.rpc('has_recent_session');
 	if (hasSession) {
 		alert("Zaten bir ilan açtın. Aynı kullanıcı 12 saat içinde yeni ilan açamaz.");
 		return;
@@ -1684,7 +1684,7 @@ function renderLivePins(sessions, cityId) {
 }
 
 /* ==============================================================
-   ŞEHİR GÖRÜNÜMÜ AYARLARI (CITY SETTINGS)
+	 ŞEHİR GÖRÜNÜMÜ AYARLARI (CITY SETTINGS)
 ============================================================== */
 function applyCityVisibility() {
 	let visibleCities = [];
@@ -1743,7 +1743,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				input.style.height = '18px';
 				input.style.accentColor = 'var(--accent-color)';
 				input.style.cursor = 'pointer';
-				
+
 				item.appendChild(span);
 				item.appendChild(input);
 				cityTogglesContainer.appendChild(item);
