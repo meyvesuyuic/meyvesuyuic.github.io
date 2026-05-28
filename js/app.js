@@ -1583,13 +1583,13 @@ async function openLiveSessionModal(session) {
 	document.getElementById('liveSessionNickname').innerText = session.nickname ? `@${session.nickname}` : '';
 
 	document.getElementById('liveSessionLocation').innerText = `${session.city}, ${session.district}`;
-	document.getElementById('liveSessionDrinkTime').innerText = session.drink_time ? `Zaman: ${session.drink_time}` : '';
-	document.getElementById('liveSessionNote').innerText = session.note ? `"${session.note}"` : '';
+	document.getElementById('liveSessionDrinkTime').innerText = session.drink_time ? session.drink_time : '';
+	document.getElementById('liveSessionNote').innerText = session.note ? session.note : '';
 
 	const createdDate = new Date(session.created_at);
 	const diffMins = Math.floor((Date.now() - createdDate) / 60000);
 	let timeAgoStr = diffMins < 60 ? `${diffMins} dakika önce` : `${Math.floor(diffMins / 60)} saat önce`;
-	document.getElementById('liveSessionTimeAgo').innerText = `Oluşturuldu: ${timeAgoStr}`;
+	document.getElementById('liveSessionTimeAgo').innerText = timeAgoStr;
 
 	const expiresDate = new Date(session.expires_at);
 	const expiresDiffMins = Math.floor((expiresDate - Date.now()) / 60000);
@@ -1607,6 +1607,14 @@ async function openLiveSessionModal(session) {
 		deleteBtn.setAttribute('data-session-id', session.id);
 	} else {
 		deleteBtn.style.display = 'none';
+	}
+
+	const viewProfileBtn = document.getElementById('viewLiveSessionProfileBtn');
+	if (viewProfileBtn) {
+		viewProfileBtn.onclick = () => {
+			closeCustomModal('liveSessionModal');
+			openProfileModal({ id: session.user_id });
+		};
 	}
 
 	lockScroll();
