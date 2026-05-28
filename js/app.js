@@ -69,6 +69,19 @@ loginBtn.addEventListener('click', async () => {
 	if (error) console.error("Giriş başlatılamadı:", error.message);
 });
 
+const landingLoginBtn = document.getElementById('landingLoginBtn');
+if (landingLoginBtn) {
+	landingLoginBtn.addEventListener('click', async () => {
+		const { error } = await supabase.auth.signInWithOAuth({
+			provider: 'twitter',
+			options: {
+				redirectTo: window.location.origin
+			}
+		});
+		if (error) console.error("Giriş başlatılamadı:", error.message);
+	});
+}
+
 // 2. Çıkış Butonu İşlevi
 logoutBtn.addEventListener('click', async () => {
 	const user = (await supabase.auth.getUser()).data.user;
@@ -90,13 +103,23 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 	// Arayüz yükleme kilidini (preload sınıflarını) kaldırıyoruz
 	document.documentElement.classList.remove('preload-session-active', 'preload-profile-ready', 'preload-needs-onboarding', 'preload-logged-out');
 
-	if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+	if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
 		if (!session) {
 			loginBtn.style.display = 'flex';
 			userContainer.style.display = 'none';
 			document.getElementById('setupScreen').style.display = 'none';
+			
+			const mapSectionHeader = document.getElementById('mapSectionHeader');
+			if (mapSectionHeader) mapSectionHeader.style.display = 'none';
+			
+			const landingPage = document.getElementById('landingPage');
+			if (landingPage) landingPage.style.display = 'flex';
+			
 			clearMap();
 			return;
+		} else {
+			const landingPage = document.getElementById('landingPage');
+			if (landingPage) landingPage.style.display = 'none';
 		}
 
 		const user = session.user;
@@ -1561,15 +1584,10 @@ async function deleteLiveSession(sessionId) {
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) return;
 
-	// İlanı silme / iptal etme fonksiyonunun içi
-	const { error } = await supabase
-		.from('live_sessions')
-		.update({
-			status: 'deleted',
-			user_id: user.id
-		}, { count: 'none', returning: 'minimal' }) // 🌟 KESİN ÇÖZÜM: Supabase'e satırı geri okuma (SELECT etme) diyoruz!
-		.eq('id', sessionId)
-		.eq('user_id', user.id);
+	// 🌟 KESİN ÇÖZÜM: .update() yerine doğrudan yukarıda yazdığımız veritabanı fonksiyonunu çağırıyoruz
+	const { error } = await supabase.rpc('sil_live_session', {
+		p_session_id: sessionId
+	});
 
 	if (error) {
 		alert("İlan silinirken bir hata oluştu: " + error.message);
