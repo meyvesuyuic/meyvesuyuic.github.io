@@ -2,6 +2,11 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { districtsMap } from './turkey-cities.js';
 
+function formatName(name) {
+	if (!name) return '';
+	return name.length > 15 ? name.substring(0, 15) + '...' : name;
+}
+
 const SUPABASE_URL = 'https://qryjfafoimjcwcuruzah.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_mYbPrK4EDrlByE_ziop0Ug_nY_wjwaz';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -108,13 +113,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			loginBtn.style.display = 'flex';
 			userContainer.style.display = 'none';
 			document.getElementById('setupScreen').style.display = 'none';
-			
+
 			const mapSectionHeader = document.getElementById('mapSectionHeader');
 			if (mapSectionHeader) mapSectionHeader.style.display = 'none';
-			
+
 			const landingPage = document.getElementById('landingPage');
 			if (landingPage) landingPage.style.display = 'flex';
-			
+
 			clearMap();
 			return;
 		} else {
@@ -140,7 +145,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 				const profileData = JSON.parse(cachedProfile);
 				if (profileData.is_onboarded) {
 					console.log("Kullanıcı bilgileri lokal depolamadan yüklendi (Onboarded), DB sorgusu atlanıyor:", profileData);
-					userName.innerText = profileData.display_name;
+					userName.innerText = formatName(profileData.display_name);
 					userAvatar.src = profileData.avatar_url;
 					loginBtn.style.display = 'none';
 					userContainer.style.display = 'flex';
@@ -166,7 +171,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			localStorage.setItem(localKey, JSON.stringify(dbProfile));
 			localStorage.setItem(cacheTimeKey, Date.now().toString());
 
-			userName.innerText = dbProfile.display_name;
+			userName.innerText = formatName(dbProfile.display_name);
 			userAvatar.src = dbProfile.avatar_url;
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
@@ -194,7 +199,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 			};
 
 			// Profil bilgilerini hemen arayüze bas
-			userName.innerText = twitterData.display_name;
+			userName.innerText = formatName(twitterData.display_name);
 			userAvatar.src = twitterData.avatar_url;
 
 			if (!dbProfile) {
@@ -556,7 +561,7 @@ function initSetupLogic(user, twitterData) {
 			localStorage.setItem(`user_profile_fetched_at_${user.id}`, Date.now().toString());
 
 			// Arayüzü güncelle
-			userName.innerText = twitterData.display_name;
+			userName.innerText = formatName(twitterData.display_name);
 			userAvatar.src = twitterData.avatar_url;
 			loginBtn.style.display = 'none';
 			userContainer.style.display = 'flex';
@@ -622,7 +627,7 @@ async function openProfileModal(user) {
 
 	// Bilgileri yerleştir
 	profileAvatarLarge.src = profileData.avatar_url || '';
-	profileDisplayName.innerText = profileData.display_name || '';
+	profileDisplayName.innerText = formatName(profileData.display_name || '');
 	profileNickname.innerText = profileData.nickname ? `@${profileData.nickname}` : '';
 
 	const profileBio = document.getElementById('profileBio');
@@ -663,10 +668,28 @@ async function openProfileModal(user) {
 	// Konumlar
 	prefLocations.innerHTML = '';
 	if (profileData.preferred_locations && profileData.preferred_locations.length > 0) {
+		const groupedLocs = {};
 		profileData.preferred_locations.forEach(loc => {
+			const parts = loc.split(',');
+			if (parts.length >= 2) {
+				const city = parts[0].trim();
+				const dist = parts[1].trim();
+				if (!groupedLocs[city]) groupedLocs[city] = [];
+				groupedLocs[city].push(dist);
+			} else {
+				const city = loc.trim();
+				if (!groupedLocs[city]) groupedLocs[city] = [];
+			}
+		});
+
+		Object.keys(groupedLocs).forEach(city => {
 			const span = document.createElement('span');
 			span.className = 'pref-tag';
-			span.innerText = loc;
+			if (groupedLocs[city].length > 0) {
+				span.innerText = `${city} (${groupedLocs[city].join(', ')})`;
+			} else {
+				span.innerText = city;
+			}
 			prefLocations.appendChild(span);
 		});
 	} else {
@@ -901,8 +924,8 @@ let currentMapUsers = {
 };
 
 // Harita Kullanıcıları Önbelleği İçin Sabitler
-const MAP_CACHE_KEY = 'mapUsersCacheV3';
-const MAP_CACHE_TIME_KEY = 'mapUsersCacheTimeV3';
+const MAP_CACHE_KEY = 'mapUsersCacheV5';
+const MAP_CACHE_TIME_KEY = 'mapUsersCacheTimeV5';
 const MAP_CACHE_DURATION = 5 * 60 * 1000; // 5 dakika (milisaniye cinsinden)
 
 function initMap() {
@@ -1037,17 +1060,32 @@ window.loadMapData = async function () {
 		if (data) {
 			data.forEach(profile => {
 				if (profile.preferred_locations && Array.isArray(profile.preferred_locations)) {
+					const groupedLocs = {};
+					const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
+
 					profile.preferred_locations.forEach(loc => {
 						const parts = loc.split(',');
 						if (parts.length >= 2) {
 							const rawCity = parts[0].trim();
 							const dist = parts[1].trim();
-							const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
 							const city = normalize(rawCity);
 							if (currentMapUsers[city]) {
-								currentMapUsers[city].push({ id: profile.id, display_name: profile.display_name, nickname: profile.nickname, avatar_url: profile.avatar_url, district: dist, updated_at: profile.updated_at });
+								if (!groupedLocs[city]) groupedLocs[city] = [];
+								groupedLocs[city].push(dist);
 							}
 						}
+					});
+
+					Object.keys(groupedLocs).forEach(city => {
+						const distString = groupedLocs[city].join(', ');
+						currentMapUsers[city].push({
+							id: profile.id,
+							display_name: profile.display_name,
+							nickname: profile.nickname,
+							avatar_url: profile.avatar_url,
+							district: distString,
+							updated_at: profile.updated_at
+						});
 					});
 				}
 			});
@@ -1136,7 +1174,7 @@ function renderMapUsers(cityId, users) {
 		pin.className = 'map-user-pin';
 		pin.style.left = `${leftPercent}%`;
 		pin.style.top = `${topPercent}%`;
-		pin.setAttribute('data-name', user.display_name);
+		pin.setAttribute('data-name', formatName(user.display_name));
 
 		pin.addEventListener('click', () => {
 			openProfileModal({ id: user.id });
@@ -1145,7 +1183,7 @@ function renderMapUsers(cityId, users) {
 		const img = document.createElement('img');
 		img.className = 'map-user-avatar';
 		img.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-		img.alt = user.display_name;
+		img.alt = formatName(user.display_name);
 		img.onerror = () => {
 			img.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
 		};
@@ -1241,7 +1279,7 @@ function renderDrinkersPage(usersInCity, container) {
 
 		const nameSpan = document.createElement('span');
 		nameSpan.className = 'drinker-name';
-		nameSpan.textContent = user.display_name;
+		nameSpan.textContent = formatName(user.display_name);
 		infoHeader.appendChild(nameSpan);
 
 		if (isNew) {
@@ -1602,7 +1640,7 @@ async function openLiveSessionModal(session) {
 	const isCurrentUser = user && user.id === session.user_id;
 
 	document.getElementById('liveSessionAvatar').src = session.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-	document.getElementById('liveSessionDisplayName').innerText = session.display_name || '';
+	document.getElementById('liveSessionDisplayName').innerText = formatName(session.display_name || '');
 	document.getElementById('liveSessionNickname').innerText = session.nickname ? `@${session.nickname}` : '';
 
 	document.getElementById('liveSessionLocation').innerText = `${session.city}, ${session.district}`;
@@ -1696,14 +1734,14 @@ function renderLivePins(sessions, cityId) {
 		pin.className = 'map-user-pin live-pin';
 		pin.style.left = `${leftPercent}%`;
 		pin.style.top = `${topPercent}%`;
-		pin.setAttribute('data-name', session.display_name);
+		pin.setAttribute('data-name', formatName(session.display_name));
 
 		pin.addEventListener('click', () => openLiveSessionModal(session));
 
 		const img = document.createElement('img');
 		img.className = 'map-user-avatar';
 		img.src = session.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-		img.alt = session.display_name;
+		img.alt = formatName(session.display_name);
 
 		const liveDot = document.createElement('div');
 		liveDot.className = 'live-dot';
