@@ -1322,11 +1322,11 @@ function openDrinkersModal(cityId) {
 	// Modaldaki başlığı güncelle
 	const modalTitle = modal.querySelector('h2');
 	if (modalTitle) {
-		modalTitle.innerHTML = `${cityName}'daki Meyvesuyu Severler <span class="drinker-count-badge">${usersInCity.length}</span>`;
+		modalTitle.innerHTML = `${cityName}'daki Maltoz Severler <span class="drinker-count-badge">${usersInCity.length}</span>`;
 	}
 
 	if (usersInCity.length === 0) {
-		container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); margin-top: 20px;">Henüz ${cityName}'da kayıtlı meyvesuyu sever bulunmuyor.</p>`;
+		container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); margin-top: 20px;">Henüz ${cityName}'da kayıtlı Maltoz sever bulunmuyor.</p>`;
 	} else {
 		renderDrinkersPage(usersInCity, container);
 	}
