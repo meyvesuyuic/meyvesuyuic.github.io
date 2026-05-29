@@ -924,16 +924,22 @@ let currentMapUsers = {
 };
 
 // Harita Kullanıcıları Önbelleği İçin Sabitler
-const MAP_CACHE_KEY = 'mapUsersCacheV5';
-const MAP_CACHE_TIME_KEY = 'mapUsersCacheTimeV5';
+const MAP_CACHE_KEY = 'mapUsersCacheV6';
+const MAP_CACHE_TIME_KEY = 'mapUsersCacheTimeV6';
 const MAP_CACHE_DURATION = 5 * 60 * 1000; // 5 dakika (milisaniye cinsinden)
 
 function initMap() {
 	const mapSection = document.getElementById('mapSection');
 	const mapSectionHeader = document.getElementById('mapSectionHeader');
-	if (!mapSection) return;
 
-	if (mapSection.innerHTML === '') {
+	if (mapSection) {
+		// Çift render/çift efekt sorununu önlemek için: Eğer harita iskeleti zaten çizildiyse, tekrar sıfırlama!
+		if (mapSection.querySelector('.city-container')) {
+			mapSection.style.display = 'block';
+			if (mapSectionHeader) mapSectionHeader.style.display = 'block';
+			return;
+		}
+
 		let htmlContent = '';
 		CITIES.forEach(city => {
 			htmlContent += `
@@ -996,6 +1002,13 @@ function clearMap() {
 // Orijinal loadMapData Fonksiyonunu Genişletilmiş Olarak Eziyoruz
 // -------------------------------------------------------------
 window.loadMapData = async function () {
+	const nowTime = Date.now();
+	if (window.lastMapRenderTime && nowTime - window.lastMapRenderTime < 1500) {
+		console.log("Çift harita yüklemesi (double effect) engellendi.");
+		return;
+	}
+	window.lastMapRenderTime = nowTime;
+
 	const { data: { session } } = await supabase.auth.getSession();
 	if (!session) {
 		console.warn("Yetkisiz harita yükleme girişimi engellendi.");
@@ -1051,7 +1064,7 @@ window.loadMapData = async function () {
 			.from('public_profiles')
 			.select('id, display_name, nickname, avatar_url, preferred_locations, updated_at')
 			.order('updated_at', { ascending: false })
-			.limit(100);
+			.limit(10000); // Varsayılan 1000 sınırına takılmamak için yüksek limit
 
 		if (error) throw error;
 
@@ -1065,19 +1078,18 @@ window.loadMapData = async function () {
 
 					profile.preferred_locations.forEach(loc => {
 						const parts = loc.split(',');
-						if (parts.length >= 2) {
-							const rawCity = parts[0].trim();
-							const dist = parts[1].trim();
-							const city = normalize(rawCity);
-							if (currentMapUsers[city]) {
-								if (!groupedLocs[city]) groupedLocs[city] = [];
-								groupedLocs[city].push(dist);
+						const rawCity = parts[0].trim();
+						const city = normalize(rawCity);
+						if (currentMapUsers[city]) {
+							if (!groupedLocs[city]) groupedLocs[city] = [];
+							if (parts.length >= 2) {
+								groupedLocs[city].push(parts[1].trim());
 							}
 						}
 					});
 
 					Object.keys(groupedLocs).forEach(city => {
-						const distString = groupedLocs[city].join(', ');
+						const distString = groupedLocs[city].length > 0 ? groupedLocs[city].join(', ') : 'Bütün Şehir';
 						currentMapUsers[city].push({
 							id: profile.id,
 							display_name: profile.display_name,
@@ -1100,6 +1112,39 @@ window.loadMapData = async function () {
 	}
 }
 
+// Harita Pinleri İçin Sabit Random Üretici (Seeded Random)
+// Amaç: Kullanıcı sayfayı yenilediğinde veya önbellek güncellendiğinde ikonların sürekli yer değiştirmesini engellemek
+function cyrb128(str) {
+    let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
+    return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
+}
+
+function sfc32(a, b, c, d) {
+    return function() {
+      a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; 
+      var t = (a + b) | 0;
+      a = b ^ b >>> 9;
+      b = c + (c << 3) | 0;
+      c = (c << 21 | c >>> 11);
+      d = d + 1 | 0;
+      t = t + d | 0;
+      c = c + t | 0;
+      return (t >>> 0) / 4294967296;
+    }
+}
+
 function renderMapUsers(cityId, users) {
 	const mapContainer = document.getElementById(`mapAvatarsContainer-${cityId}`);
 	const svgEl = document.getElementById(`svg-${cityId}`);
@@ -1109,8 +1154,7 @@ function renderMapUsers(cityId, users) {
 	const cityObj = CITIES.find(c => c.id === cityId);
 	if (!cityObj) return;
 
-	const stableUsers = [...users].sort((a, b) => a.id.localeCompare(b.id));
-	const total = stableUsers.length;
+	const total = users.length;
 
 	// Toplam kullanıcı sayısını güncelle
 	const totalCounter = document.getElementById(`cityTotal-${cityId}`);
@@ -1120,9 +1164,17 @@ function renderMapUsers(cityId, users) {
 
 	if (total === 0) return;
 
+	// YENİ KULLANICILARIN GÖZÜKMESİ İÇİN: 
+	// users dizisi veritabanından 'updated_at' (en yeni) sıralamasıyla geliyor.
+	// Önce en yeni 100 kişiyi seçiyoruz (Böylece yeni kayıt olanlar haritada mutlaka çıkar)
+	const latestUsersToPin = users.slice(0, 100);
+
+	// Sonra bu 100 kişiyi kendi aralarında ID'ye göre sıralıyoruz ki 
+	// haritaya yerleştirilme algoritmaları sabit (deterministic) çalışsın ve titreme yapmasın.
+	const stableUsersToPin = [...latestUsersToPin].sort((a, b) => a.id.localeCompare(b.id));
+
 	const viewBox = cityObj.viewBoxObj;
 	const center = cityObj.center;
-	const maxRadius = cityObj.radius;
 
 	// Harita üzerindeki kara parçalarını (path) bulalım
 	const paths = Array.from(svgEl.querySelectorAll('path'));
@@ -1135,20 +1187,24 @@ function renderMapUsers(cityId, users) {
 	}
 
 	const placedPoints = [];
+	const usersToPin = stableUsersToPin;
 
-	stableUsers.forEach((user, i) => {
+	usersToPin.forEach((user, i) => {
 		let bestX = center.x;
 		let bestY = center.y;
 		let maxClosestDist = -1;
 
-		// 50 farklı rastgele nokta deneyip diğer kişilere en uzak olanını seçiyoruz (daha fazla deneme = daha iyi dağılım)
-		for (let attempts = 0; attempts < 50; attempts++) {
-			const angle = Math.random() * Math.PI * 2;
-			// Çarpanı 0.95'ten 1.25'e çıkardım ki haritanın en dış köşelerine kadar yayılma özgürlükleri olsun
-			const r = maxRadius * Math.sqrt(Math.random()) * 1.25; 
-			
-			const testX = center.x + r * Math.cos(angle);
-			const testY = center.y + r * Math.sin(angle);
+		// Her kullanıcı için kendi ID'sinden türetilen sabit bir seed oluşturuyoruz (Sayfa yenilense de pin yeri aynı kalır)
+		const userSeed = cyrb128(user.id || i.toString());
+		const rand = sfc32(userSeed[0], userSeed[1], userSeed[2], userSeed[3]);
+
+		// Optimizasyon: Aday sayısını 400'e çıkararak iğneleri birbirine en uzak noktalara yerleştiriyoruz
+		for (let attempts = 0; attempts < 400; attempts++) {
+			// Yarıçap (circle) kısıtlamasını tamamen iptal ettik! 
+			// Artık noktalar sadece merkeze değil, tüm viewBox (şehrin tamamı) alanına rastgele üretiliyor.
+			// isInsideLand fonksiyonu zaten denizin veya harita dışının seçilmesini engelliyor.
+			const testX = viewBox.x + (rand() * viewBox.w);
+			const testY = viewBox.y + (rand() * viewBox.h);
 
 			if (isInsideLand(testX, testY)) {
 				let closestDist = Infinity;
@@ -1198,7 +1254,18 @@ function renderMapUsers(cityId, users) {
 
 		const img = document.createElement('img');
 		img.className = 'map-user-avatar';
-		img.src = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		
+		// Map performans optimizasyonu: Büyük resimleri (400x400) haritada daha düşük boyutlu (_normal) versiyonuyla render ediyoruz
+		let optimizedAvatar = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+		if (optimizedAvatar.includes('_400x400')) {
+			optimizedAvatar = optimizedAvatar.replace('_400x400', '_normal');
+		}
+
+		// Animasyon Gecikmesi: Profil fotolarının aynı anda değil, patlamış mısır gibi sırayla açılması için rastgele ama sabit (seeded) bir gecikme veriyoruz
+		const animDelay = rand() * 0.8;
+		pin.style.animationDelay = `${animDelay}s`;
+
+		img.src = optimizedAvatar;
 		img.alt = formatName(user.display_name);
 		img.onerror = () => {
 			img.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';

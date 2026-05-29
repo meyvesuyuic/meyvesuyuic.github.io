@@ -1131,7 +1131,7 @@ header {
 	color: var(--text-color);
 	border: 1px solid rgba(0, 0, 0, 0.05);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-	z-index: 10;
+	z-index: 100;
 }
 
 .map-wrapper {
@@ -1188,6 +1188,21 @@ header {
 	pointer-events: none;
 }
 
+@keyframes pinPopIn {
+	0% {
+		opacity: 0;
+		transform: scale(0);
+	}
+	60% {
+		opacity: 1;
+		transform: scale(1.15);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
 .map-user-pin {
 	position: absolute;
 	width: 32px;
@@ -1197,12 +1212,15 @@ header {
 	pointer-events: auto;
 	cursor: pointer;
 	z-index: 10;
-	transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	animation: pinPopIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
 .map-user-pin:hover {
-	transform: scale(1.2) !important;
 	z-index: 999;
+}
+
+.map-user-pin:hover .map-user-avatar {
+	transform: scale(1.2);
 }
 
 .map-user-avatar {
@@ -1214,6 +1232,7 @@ header {
 	object-fit: cover;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
 	display: block;
+	transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Pulsing Live Effect */
