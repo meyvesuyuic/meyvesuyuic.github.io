@@ -91,7 +91,8 @@
 		<div id="landingPage" class="landing-page" style="display: none;">
 			<div class="landing-content">
 				<h1 class="landing-title">Meyve Suyu Topluluğu</h1>
-				<p class="landing-subtitle">Çevrendeki meyve suyu severleri keşfet, favorilerini paylaş ve anlık ilanlarla sosyalleş.</p>
+				<p class="landing-subtitle">Çevrendeki meyve suyu severleri keşfet, favorilerini paylaş ve anlık ilanlarla
+					sosyalleş.</p>
 				<button class="btn-twitter btn-large-login" id="landingLoginBtn">
 					<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
 						<path
@@ -110,7 +111,7 @@
 
 			<!-- Global Harita Kontrolleri -->
 			<div class="global-map-controls"
-				style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
+				style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: nowrap; gap: 8px;">
 
 				<!-- Sol Taraf (Ayarlar ve Yenile) -->
 				<div style="display: flex; gap: 8px;">
@@ -129,6 +130,8 @@
 								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
 						</svg>
 					</button>
+					<button id="btnAllCities" class="btn-map-action"
+						style="padding: 7px 14px; font-size: 13px;">Şehirler</button>
 				</div>
 
 				<!-- Sağ Taraf (Anlık Switch ve İlan Ver) -->
@@ -167,8 +170,11 @@
 			<div id="step-1" class="setup-step active">
 				<h3>Bize biraz zevklerinden bahset</h3>
 
-				<div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14.5px; color: #991b1b; line-height: 1.5;">
-					<strong>Önemli Uyarı:</strong> Seçtiğin konum bilgileri haritada diğer kullanıcılara açık olarak gösterilecek ve profilini oluşturduktan sonra <strong>kesinlikle değiştirilemeyecektir</strong>. Lütfen doğru konumları seçtiğinden emin ol.
+				<div
+					style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14.5px; color: #991b1b; line-height: 1.5;">
+					<strong>Önemli Uyarı:</strong> Seçtiğin konum bilgileri haritada diğer kullanıcılara açık olarak gösterilecek
+					ve profilini oluşturduktan sonra <strong>kesinlikle değiştirilemeyecektir</strong>. Lütfen doğru konumları
+					seçtiğinden emin ol.
 				</div>
 
 				<div class="form-group">
@@ -270,9 +276,14 @@
 				</div>
 
 				<div class="form-group" style="margin-top: 10px; flex-direction: row; align-items: flex-start; gap: 10px;">
-					<input type="checkbox" id="kvkkCheck" style="margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer;">
-					<label for="kvkkCheck" style="font-size: 14px; color: var(--secondary-text); font-weight: 500; cursor: pointer; line-height: 1.5; margin-bottom: 0;">
-						<a href="#" id="openKvkkModalBtn" style="color: var(--accent-color); text-decoration: underline; font-weight: 600;">KVKK Aydınlatma Metni</a>'ni okudum, anladım ve profil bilgilerimin harita üzerinde diğer kullanıcılarla paylaşılmasını onaylıyorum.
+					<input type="checkbox" id="kvkkCheck"
+						style="margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer;">
+					<label for="kvkkCheck"
+						style="font-size: 14px; color: var(--secondary-text); font-weight: 500; cursor: pointer; line-height: 1.5; margin-bottom: 0;">
+						<a href="#" id="openKvkkModalBtn"
+							style="color: var(--accent-color); text-decoration: underline; font-weight: 600;">KVKK Aydınlatma
+							Metni</a>'ni okudum, anladım ve profil bilgilerimin harita üzerinde diğer kullanıcılarla paylaşılmasını
+						onaylıyorum.
 					</label>
 				</div>
 
@@ -399,23 +410,36 @@
 				</div>
 				<div style="margin-top: 15px; text-align: center;">
 					<div style="font-weight: 800; font-size: 20px; color: var(--text-color);" id="liveSessionLocation"></div>
-					<div style="margin-top: 8px; font-size: 15px; font-weight: 600; color: var(--accent-color); display: flex; align-items: center; justify-content: center; gap: 5px;">
-						<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+					<div
+						style="margin-top: 8px; font-size: 15px; font-weight: 600; color: var(--accent-color); display: flex; align-items: center; justify-content: center; gap: 5px;">
+						<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+							</path>
+						</svg>
 						<span id="liveSessionDrinkTime"></span>
 					</div>
-					<div style="margin-top: 16px; font-size: 15px; line-height: 1.5; color: var(--text-color); padding: 12px 16px; background: #f3f4f6; border-radius: 14px; border: 1px solid #e5e7eb; display: inline-block; max-width: 100%; text-align: left;" id="liveSessionNote"></div>
+					<div
+						style="margin-top: 16px; font-size: 15px; line-height: 1.5; color: var(--text-color); padding: 12px 16px; background: #f3f4f6; border-radius: 14px; border: 1px solid #e5e7eb; display: inline-block; max-width: 100%; text-align: left;"
+						id="liveSessionNote"></div>
 				</div>
 			</div>
 			<div class="profile-modal-body" style="text-align: center; padding-top: 10px;">
-				<div style="display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: var(--secondary-text); margin-bottom: 24px;">
+				<div
+					style="display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: var(--secondary-text); margin-bottom: 24px;">
 					<span id="liveSessionTimeAgo"></span>
 					<span style="opacity: 0.5;">•</span>
 					<span id="liveSessionExpiresIn"></span>
 				</div>
-				
+
 				<div style="display: flex; gap: 10px; justify-content: center;">
-					<button id="viewLiveSessionProfileBtn" style="flex: 1; padding: 14px; border-radius: 16px; background: var(--accent-color); color: white; font-weight: 700; font-size: 16px; border: none; cursor: pointer; transition: transform 0.2s, opacity 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">Profili İncele</button>
-					<button id="deleteLiveSessionBtn" style="display: none; flex: 1; padding: 14px; border-radius: 16px; background: #ef4444; color: white; font-weight: 700; font-size: 16px; border: none; cursor: pointer; transition: transform 0.2s, opacity 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">İlanı Sil</button>
+					<button id="viewLiveSessionProfileBtn"
+						style="flex: 1; padding: 14px; border-radius: 16px; background: var(--accent-color); color: white; font-weight: 700; font-size: 16px; border: none; cursor: pointer; transition: transform 0.2s, opacity 0.2s;"
+						onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'"
+						onmouseleave="this.style.transform='scale(1)'">Profili İncele</button>
+					<button id="deleteLiveSessionBtn"
+						style="display: none; flex: 1; padding: 14px; border-radius: 16px; background: #ef4444; color: white; font-weight: 700; font-size: 16px; border: none; cursor: pointer; transition: transform 0.2s, opacity 0.2s;"
+						onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'"
+						onmouseleave="this.style.transform='scale(1)'">İlanı Sil</button>
 				</div>
 			</div>
 		</div>
@@ -501,6 +525,60 @@
 		</div>
 	</div>
 
+	<!-- Tum Sehirler Listesi Modali -->
+	<div class="profile-modal" id="allCitiesModal" style="display: none;">
+		<div class="profile-modal-overlay" id="allCitiesModalOverlay"></div>
+		<div class="profile-modal-content">
+			<div class="profile-modal-header">
+				<button class="btn-close-modal" id="closeAllCitiesBtn" title="Kapat">
+					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+				<h2
+					style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">
+					Tum Sehirler</h2>
+				<p
+					style="text-align: center; color: var(--secondary-text); font-size: 14px; margin-top: 8px; font-weight: 500;">
+					Verisi olan sehirler alfabetik siraya gore listelenmistir.</p>
+			</div>
+			<div class="profile-modal-body" style="padding-top: 10px;">
+				<div id="allCitiesLoadingState" style="text-align: center; padding: 40px 0; color: var(--secondary-text); font-size: 15px; font-weight: 500;">Sehirler yukleniyor...</div>
+				<div id="allCitiesGrid" class="all-cities-grid"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Dinamik Sehir Haritasi Modali -->
+	<div class="profile-modal" id="dynamicCityMapModal" style="display: none;">
+		<div class="profile-modal-overlay" id="dynamicCityMapOverlay"></div>
+		<div class="profile-modal-content">
+			<div class="profile-modal-header">
+				<button class="btn-close-modal" id="closeDynamicCityMapBtn" title="Kapat">
+					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+				<h2 id="dynamicCityMapTitle"
+					style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;"></h2>
+			</div>
+			<div class="profile-modal-body" style="padding-top: 10px;">
+				<div id="dynamicMapWrapper" class="dynamic-map-wrapper">
+					<!-- SVG harita buraya yuklenecek -->
+				</div>
+				<div class="dynamic-map-footer">
+					<div class="city-stats" id="dynamicCityStats" style="margin: 12px auto;">
+						Toplam <strong id="dynamicCityTotal">0</strong> kullanici
+					</div>
+					<div style="display: flex; gap: 8px; justify-content: center; margin-top: 12px;">
+						<button class="btn-map-action" id="btnDynamicExplore">Kullanicilari Incele</button>
+						<button class="btn-map-action" id="btnPinToHomepage">Ana Sayfaya Ekle</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- KVKK Modal -->
 	<div class="profile-modal" id="kvkkModal" style="display: none;">
 		<div class="profile-modal-overlay" id="kvkkModalOverlay"></div>
@@ -511,22 +589,35 @@
 						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 					</svg>
 				</button>
-				<h2 style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">
+				<h2
+					style="font-family: 'SF Pro Rounded', sans-serif; font-size: 22px; font-weight: 900; margin-top: 10px; letter-spacing: -0.5px; text-align: center;">
 					KVKK Aydınlatma Metni
 				</h2>
 			</div>
-			<div class="profile-modal-body" style="overflow-y: auto; text-align: left; padding-top: 0; font-size: 14.5px; line-height: 1.6; color: var(--text-color);">
+			<div class="profile-modal-body"
+				style="overflow-y: auto; text-align: left; padding-top: 0; font-size: 14.5px; line-height: 1.6; color: var(--text-color);">
 				<p style="margin-bottom: 12px;"><strong>1. Veri Sorumlusunun Kimliği</strong></p>
-				<p style="margin-bottom: 16px; color: var(--secondary-text);">Meyve Suyu Haritası ("Uygulama") olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz veri sorumlusu sıfatıyla aşağıda açıklanan amaçlar kapsamında ve hukuka uygun olarak işlenecektir.</p>
-				
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Meyve Suyu Haritası ("Uygulama") olarak, 6698
+					sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz veri sorumlusu sıfatıyla
+					aşağıda açıklanan amaçlar kapsamında ve hukuka uygun olarak işlenecektir.</p>
+
 				<p style="margin-bottom: 12px;"><strong>2. İşlenen Kişisel Verileriniz ve İşlenme Amacı</strong></p>
-				<p style="margin-bottom: 16px; color: var(--secondary-text);">Uygulamaya kayıt olurken Twitter (X) üzerinden sağladığınız profil resminiz, adınız, kullanıcı adınız ile uygulama içerisinde kendi rızanızla seçtiğiniz <strong>konum bilgileriniz</strong>, içecek tercihleriniz ve diğer profil detaylarınız; uygulamanın temel işlevi olan "harita üzerinde diğer kullanıcılarla etkileşim kurma ve görünürlük sağlama" amacıyla işlenmekte ve harita üzerinde diğer kullanıcılara <strong>açık bir şekilde</strong> gösterilmektedir.</p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Uygulamaya kayıt olurken Twitter (X) üzerinden
+					sağladığınız profil resminiz, adınız, kullanıcı adınız ile uygulama içerisinde kendi rızanızla seçtiğiniz
+					<strong>konum bilgileriniz</strong>, içecek tercihleriniz ve diğer profil detaylarınız; uygulamanın temel
+					işlevi olan "harita üzerinde diğer kullanıcılarla etkileşim kurma ve görünürlük sağlama" amacıyla işlenmekte
+					ve harita üzerinde diğer kullanıcılara <strong>açık bir şekilde</strong> gösterilmektedir.</p>
 
 				<p style="margin-bottom: 12px;"><strong>3. Kişisel Verilerin Aktarılması</strong></p>
-				<p style="margin-bottom: 16px; color: var(--secondary-text);">Seçmiş olduğunuz konum bilgileri ve profil detaylarınız, platformun doğası gereği uygulamaya kayıtlı diğer tüm kullanıcılar tarafından harita arayüzünde görüntülenebilecektir. Verileriniz, yasal zorunluluklar dışında üçüncü kişi veya kurumlarla paylaşılmamaktadır.</p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Seçmiş olduğunuz konum bilgileri ve profil
+					detaylarınız, platformun doğası gereği uygulamaya kayıtlı diğer tüm kullanıcılar tarafından harita arayüzünde
+					görüntülenebilecektir. Verileriniz, yasal zorunluluklar dışında üçüncü kişi veya kurumlarla
+					paylaşılmamaktadır.</p>
 
 				<p style="margin-bottom: 12px;"><strong>4. Konum Bilgisinin Değiştirilememesi</strong></p>
-				<p style="margin-bottom: 16px; color: var(--secondary-text);">Kayıt aşamasında seçtiğiniz konum bilgileri, platformun kötüye kullanımını önlemek amacıyla profil oluşturulduktan sonra <strong>değiştirilemez</strong> olarak kaydedilmektedir. Lütfen konum tercihlerinizi bu durumu göz önünde bulundurarak yapınız.</p>
+				<p style="margin-bottom: 16px; color: var(--secondary-text);">Kayıt aşamasında seçtiğiniz konum bilgileri,
+					platformun kötüye kullanımını önlemek amacıyla profil oluşturulduktan sonra <strong>değiştirilemez</strong>
+					olarak kaydedilmektedir. Lütfen konum tercihlerinizi bu durumu göz önünde bulundurarak yapınız.</p>
 
 				<button id="acceptKvkkBtn" class="btn-main" style="margin-top: 24px;">Okudum, Onaylıyorum</button>
 			</div>

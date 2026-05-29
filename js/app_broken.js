@@ -2,6 +2,12 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { districtsMap } from './turkey-cities.js';
 
+const CITY_NAMES_MAP = {};
+Object.keys(districtsMap).forEach(key => {
+	const normalized = key.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
+	CITY_NAMES_MAP[normalized] = key;
+});
+
 function formatName(name) {
 	if (!name) return '';
 	return name.length > 15 ? name.substring(0, 15) + '...' : name;
@@ -873,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Map Integration for Istanbul, Ankara, Izmir, Eskisehir ---
 
-const CITIES = [
+const DEFAULT_CITIES = [
 	{
 		id: 'istanbul',
 		name: 'İstanbul',
@@ -916,12 +922,30 @@ const CITIES = [
 	}
 ];
 
-let currentMapUsers = {
-	istanbul: [],
-	ankara: [],
-	izmir: [],
-	eskisehir: []
-};
+let CITIES = [...DEFAULT_CITIES];
+try {
+	const customStr = localStorage.getItem('custom_cities_v1');
+	if (customStr) {
+		const customCities = JSON.parse(customStr);
+		CITIES = [...DEFAULT_CITIES, ...customCities];
+	}
+} catch(e) { console.error(e); }
+
+let currentMapUsers = {};
+
+try {
+	const orderStr = localStorage.getItem('city_order_v1');
+	if (orderStr) {
+		const order = JSON.parse(orderStr);
+		CITIES.sort((a, b) => {
+			let indexA = order.indexOf(a.id);
+			let indexB = order.indexOf(b.id);
+			if (indexA === -1) indexA = 999;
+			if (indexB === -1) indexB = 999;
+			return indexA - indexB;
+		});
+	}
+} catch (e) {}
 
 // Harita Kullanıcıları Önbelleği İçin Sabitler
 const MAP_CACHE_KEY = 'mapUsersCacheV6';
@@ -946,8 +970,8 @@ function initMap() {
 				<div class="city-container" id="cityContainer-${city.id}">
 					<div class="city-badge">${city.name}</div>
 					<div class="map-wrapper map-wrapper-${city.id}" id="mapWrapper-${city.id}">
-						<svg version="1.1" id="svg-${city.id}" xmlns="http://www.w3.org/2000/svg" viewBox="${city.viewBox}">
-							<g id="${city.id}-paths" class="istanbul-map-group">
+						<svg version="1.1" id="svg-${city.id}" class="map-svg" style="${['istanbul','ankara','izmir','eskisehir'].includes(city.id) ? '' : 'transform: scale(0.85);'}" xmlns="http://www.w3.org/2000/svg" viewBox="${city.viewBox}">
+							<g id="${city.id}-paths" class="istanbul-map-group" style="${['istanbul','ankara','izmir','eskisehir'].includes(city.id) ? '' : 'fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1px;'}">
 								${city.path}
 							</g>
 						</svg>
@@ -980,11 +1004,8 @@ function initMap() {
 	mapSection.style.display = 'block';
 	if (mapSectionHeader) mapSectionHeader.style.display = 'block';
 
-	// Sehir gorunurluk ayarlarini uygula
+	// Şehir görünürlük ayarlarını uygula
 	applyCityVisibility();
-
-	// Eklenmis (pinned) sehirleri render et
-	initPinnedCities();
 }
 
 function clearMap() {
@@ -993,20 +1014,15 @@ function clearMap() {
 		mapSection.innerHTML = '';
 		mapSection.style.display = 'none';
 	}
-	currentMapUsers = {
-		istanbul: [],
-		ankara: [],
-		izmir: [],
-		eskisehir: []
-	};
+	currentMapUsers = {};
 }
 
 // -------------------------------------------------------------
 // Orijinal loadMapData Fonksiyonunu Genişletilmiş Olarak Eziyoruz
 // -------------------------------------------------------------
-window.loadMapData = async function (force = false) {
+window.loadMapData = async function () {
 	const nowTime = Date.now();
-	if (!force && window.lastMapRenderTime && nowTime - window.lastMapRenderTime < 1500) {
+	if (window.lastMapRenderTime && nowTime - window.lastMapRenderTime < 1500) {
 		console.log("Çift harita yüklemesi (double effect) engellendi.");
 		return;
 	}
@@ -1030,22 +1046,16 @@ window.loadMapData = async function (force = false) {
 			const { data, error } = await supabase.from('public_live_sessions').select('*');
 			if (error) throw error;
 
-			currentMapUsers = { istanbul: [], ankara: [], izmir: [], eskisehir: [] };
-
-			// Pinned sehirler icin de bos dizi olustur
-			const pinnedLiveIds = getHomepageCityOrder().filter(id => !DEFAULT_CITY_IDS.includes(id));
-			pinnedLiveIds.forEach(id => { currentMapUsers[id] = []; });
+			currentMapUsers = {};
 
 			if (data) {
 				data.forEach(sess => {
 					const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
-					const cityId = normalize(sess.city);
-					if (currentMapUsers[cityId]) currentMapUsers[cityId].push(sess);
+					if (!currentMapUsers[cityId]) currentMapUsers[cityId] = [];
+					currentMapUsers[cityId].push(sess);
 				});
 
-				CITIES.forEach(city => {
-					if (currentMapUsers[city.id]) renderLivePins(currentMapUsers[city.id], city.id);
-				});
+				CITIES.forEach(city => { renderLivePins(currentMapUsers[city.id], city.id); });
 			}
 		} catch (err) {
 			console.error("Error loading live sessions:", err.message);
@@ -1061,15 +1071,7 @@ window.loadMapData = async function (force = false) {
 	if (cachedTime && cachedData && (now - parseInt(cachedTime, 10) < MAP_CACHE_DURATION)) {
 		try {
 			currentMapUsers = JSON.parse(cachedData);
-			// Sadece varsayilan 4 sehir icin cache'den render et (pinned'lar ayri yuklenir)
-			DEFAULT_CITY_IDS.forEach(cityId => {
-				if (currentMapUsers[cityId]) renderMapUsers(cityId, currentMapUsers[cityId]);
-			});
-			// Pinned sehirlerin verisini de yukle
-			const pinnedCacheIds = getHomepageCityOrder().filter(id => !DEFAULT_CITY_IDS.includes(id));
-			if (pinnedCacheIds.some(id => document.getElementById(`mapAvatarsContainer-${id}`))) {
-				loadPinnedCityData();
-			}
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id] || []); });
 			return;
 		} catch (e) {
 			console.error("Yerel harita önbelleği okunamadı:", e);
@@ -1085,7 +1087,7 @@ window.loadMapData = async function (force = false) {
 
 		if (error) throw error;
 
-		currentMapUsers = { istanbul: [], ankara: [], izmir: [], eskisehir: [] };
+		currentMapUsers = {};
 
 		if (data) {
 			data.forEach(profile => {
@@ -1097,11 +1099,11 @@ window.loadMapData = async function (force = false) {
 						const parts = loc.split(',');
 						const rawCity = parts[0].trim();
 						const city = normalize(rawCity);
-						if (currentMapUsers[city]) {
-							if (!groupedLocs[city]) groupedLocs[city] = [];
-							if (parts.length >= 2) {
-								groupedLocs[city].push(parts[1].trim());
-							}
+						if (!currentMapUsers[city]) currentMapUsers[city] = [];
+						
+						if (!groupedLocs[city]) groupedLocs[city] = [];
+						if (parts.length >= 2) {
+							groupedLocs[city].push(parts[1].trim());
 						}
 					});
 
@@ -1122,14 +1124,7 @@ window.loadMapData = async function (force = false) {
 			localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(currentMapUsers));
 			localStorage.setItem(MAP_CACHE_TIME_KEY, now.toString());
 
-			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id]); });
-		}
-
-		// Pinned sehirler icin de veri yukle (sadece container'lar zaten varsa - ilk yuklemeyi initPinnedCities yapar)
-		const pinnedOrder = getHomepageCityOrder().filter(id => !DEFAULT_CITY_IDS.includes(id));
-		const hasPinnedContainers = pinnedOrder.some(id => document.getElementById(`mapAvatarsContainer-${id}`));
-		if (hasPinnedContainers) {
-			await loadPinnedCityData();
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id] || []); });
 		}
 	} catch (err) {
 		console.error("Error loading map users:", err.message);
@@ -1139,44 +1134,241 @@ window.loadMapData = async function (force = false) {
 // Harita Pinleri İçin Sabit Random Üretici (Seeded Random)
 // Amaç: Kullanıcı sayfayı yenilediğinde veya önbellek güncellendiğinde ikonların sürekli yer değiştirmesini engellemek
 function cyrb128(str) {
-	let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
-	for (let i = 0, k; i < str.length; i++) {
-		k = str.charCodeAt(i);
-		h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
-		h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
-		h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
-		h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
-	}
-	h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
-	h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
-	h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
-	h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
-	h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
-	return [h1 >>> 0, h2 >>> 0, h3 >>> 0, h4 >>> 0];
+    let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
+    return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
 }
 
 function sfc32(a, b, c, d) {
-	return function () {
-		a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
-		var t = (a + b) | 0;
-		a = b ^ b >>> 9;
-		b = c + (c << 3) | 0;
-		c = (c << 21 | c >>> 11);
-		d = d + 1 | 0;
-		t = t + d | 0;
-		c = c + t | 0;
-		return (t >>> 0) / 4294967296;
-	}
+    return function() {
+      a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; 
+      var t = (a + b) | 0;
+      a = b ^ b >>> 9;
+      b = c + (c << 3) | 0;
+      c = (c << 21 | c >>> 11);
+      d = d + 1 | 0;
+      t = t + d | 0;
+      c = c + t | 0;
+      return (t >>> 0) / 4294967296;
+    }
 }
 
 function renderMapUsers(cityId, users) {
-	if (!users) users = [];
 	const mapContainer = document.getElementById(`mapAvatarsContainer-${cityId}`);
 	const svgEl = document.getElementById(`svg-${cityId}`);
 	if (!mapContainer || !svgEl) return;
 	mapContainer.innerHTML = '';
 
-	const cityObj = CITIES.find(c => c.id === cityId);
+	let cityObj = CITIES.find(c => c.id === cityId);
+	if (!cityObj && cityId === 'dynamic' && window.currentDynamicCity) {
+		cityObj = window.currentDynamicCity.cityData;
+						<div class="city-stats" id="cityStats-${city.id}">
+							Toplam <strong id="cityTotal-${city.id}">0</strong> kullanıcı
+						</div>
+						<div class="city-controls">
+							<div style="display: flex; gap: 8px; align-items: center; margin: 0 auto;">
+								<button class="btn-map-action" id="btnExplore-${city.id}"></button>
+							</div>
+						</div>
+					</div>
+				</div>
+			`;
+		});
+		mapSection.innerHTML = htmlContent;
+
+		// Event listener'ları ve buton metinlerini bağla
+		CITIES.forEach(city => {
+			const btnExplore = document.getElementById(`btnExplore-${city.id}`);
+			if (btnExplore) {
+				btnExplore.innerText = `${city.name}${city.exploreSuffix}`;
+				btnExplore.addEventListener('click', () => openDrinkersModal(city.id));
+			}
+		});
+	}
+	mapSection.style.display = 'block';
+	if (mapSectionHeader) mapSectionHeader.style.display = 'block';
+
+	// Şehir görünürlük ayarlarını uygula
+	applyCityVisibility();
+}
+
+function clearMap() {
+	const mapSection = document.getElementById('mapSection');
+	if (mapSection) {
+		mapSection.innerHTML = '';
+		mapSection.style.display = 'none';
+	}
+	currentMapUsers = {};
+}
+
+// -------------------------------------------------------------
+// Orijinal loadMapData Fonksiyonunu Genişletilmiş Olarak Eziyoruz
+// -------------------------------------------------------------
+window.loadMapData = async function () {
+	const nowTime = Date.now();
+	if (window.lastMapRenderTime && nowTime - window.lastMapRenderTime < 1500) {
+		console.log("Çift harita yüklemesi (double effect) engellendi.");
+		return;
+	}
+	window.lastMapRenderTime = nowTime;
+
+	const { data: { session } } = await supabase.auth.getSession();
+	if (!session) {
+		console.warn("Yetkisiz harita yükleme girişimi engellendi.");
+		clearMap();
+		return;
+	}
+
+	// Switch disabled durumunu kaldırıyoruz (Giriş yapıldığında)
+	const globalToggle = document.getElementById('globalLiveToggle');
+	if (globalToggle) globalToggle.disabled = false;
+
+	// EĞER LIVE MOD AÇIKSA
+	if (isLiveMode) {
+		try {
+			console.log("Fetching live sessions from Supabase...");
+			const { data, error } = await supabase.from('public_live_sessions').select('*');
+			if (error) throw error;
+
+			currentMapUsers = {};
+
+			if (data) {
+				data.forEach(sess => {
+					const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
+					if (!currentMapUsers[cityId]) currentMapUsers[cityId] = [];
+					currentMapUsers[cityId].push(sess);
+				});
+
+				CITIES.forEach(city => { renderLivePins(currentMapUsers[city.id], city.id); });
+			}
+		} catch (err) {
+			console.error("Error loading live sessions:", err.message);
+		}
+		return;
+	}
+
+	// NORMAL MOD
+	const cachedTime = localStorage.getItem(MAP_CACHE_TIME_KEY);
+	const cachedData = localStorage.getItem(MAP_CACHE_KEY);
+	const now = Date.now();
+
+	if (cachedTime && cachedData && (now - parseInt(cachedTime, 10) < MAP_CACHE_DURATION)) {
+		try {
+			currentMapUsers = JSON.parse(cachedData);
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id] || []); });
+			return;
+		} catch (e) {
+			console.error("Yerel harita önbelleği okunamadı:", e);
+		}
+	}
+
+	try {
+		const { data, error } = await supabase
+			.from('public_profiles')
+			.select('id, display_name, nickname, avatar_url, preferred_locations, updated_at')
+			.order('updated_at', { ascending: false })
+			.limit(10000); // Varsayılan 1000 sınırına takılmamak için yüksek limit
+
+		if (error) throw error;
+
+		currentMapUsers = {};
+
+		if (data) {
+			data.forEach(profile => {
+				if (profile.preferred_locations && Array.isArray(profile.preferred_locations)) {
+					const groupedLocs = {};
+					const normalize = (str) => str.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i').replace(/Ş/g, 's').replace(/ş/g, 's').replace(/Ğ/g, 'g').replace(/ğ/g, 'g').replace(/Ü/g, 'u').replace(/ü/g, 'u').replace(/Ö/g, 'o').replace(/ö/g, 'o').replace(/Ç/g, 'c').replace(/ç/g, 'c').toLowerCase();
+
+					profile.preferred_locations.forEach(loc => {
+						const parts = loc.split(',');
+						const rawCity = parts[0].trim();
+						const city = normalize(rawCity);
+						if (!currentMapUsers[city]) currentMapUsers[city] = [];
+						
+						if (!groupedLocs[city]) groupedLocs[city] = [];
+						if (parts.length >= 2) {
+							groupedLocs[city].push(parts[1].trim());
+						}
+					});
+
+					Object.keys(groupedLocs).forEach(city => {
+						const distString = groupedLocs[city].length > 0 ? groupedLocs[city].join(', ') : 'Bütün Şehir';
+						currentMapUsers[city].push({
+							id: profile.id,
+							display_name: profile.display_name,
+							nickname: profile.nickname,
+							avatar_url: profile.avatar_url,
+							district: distString,
+							updated_at: profile.updated_at
+						});
+					});
+				}
+			});
+
+			localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(currentMapUsers));
+			localStorage.setItem(MAP_CACHE_TIME_KEY, now.toString());
+
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id] || []); });
+		}
+	} catch (err) {
+		console.error("Error loading map users:", err.message);
+	}
+}
+
+// Harita Pinleri İçin Sabit Random Üretici (Seeded Random)
+// Amaç: Kullanıcı sayfayı yenilediğinde veya önbellek güncellendiğinde ikonların sürekli yer değiştirmesini engellemek
+function cyrb128(str) {
+    let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
+    return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
+}
+
+function sfc32(a, b, c, d) {
+    return function() {
+      a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; 
+      var t = (a + b) | 0;
+      a = b ^ b >>> 9;
+      b = c + (c << 3) | 0;
+      c = (c << 21 | c >>> 11);
+      d = d + 1 | 0;
+      t = t + d | 0;
+      c = c + t | 0;
+      return (t >>> 0) / 4294967296;
+    }
+}
+
+function renderMapUsers(cityId, users) {
+	const mapContainer = document.getElementById(`mapAvatarsContainer-${cityId}`);
+	const svgEl = document.getElementById(`svg-${cityId}`);
+	if (!mapContainer || !svgEl) return;
+	mapContainer.innerHTML = '';
+
+	let cityObj = CITIES.find(c => c.id === cityId);
+	if (!cityObj && cityId === 'dynamic' && window.currentDynamicCity) {
+		cityObj = window.currentDynamicCity.cityData;
+	}
 	if (!cityObj) return;
 
 	const total = users.length;
@@ -1196,19 +1388,29 @@ function renderMapUsers(cityId, users) {
 
 	// Sonra bu 100 kişiyi kendi aralarında ID'ye göre sıralıyoruz ki 
 	// haritaya yerleştirilme algoritmaları sabit (deterministic) çalışsın ve titreme yapmasın.
-	const stableUsersToPin = [...latestUsersToPin].sort((a, b) => a.id.localeCompare(b.id));
+	const stableUsersToPin = [...latestUsersToPin].sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
 	const viewBox = cityObj.viewBoxObj;
 	const center = cityObj.center;
 
 	// Harita üzerindeki kara parçalarını (path) bulalım
 	const paths = Array.from(svgEl.querySelectorAll('path'));
+	let failedHitTests = 0;
 	function isInsideLand(x, y) {
 		if (paths.length === 0) return true;
-		const pt = svgEl.createSVGPoint();
-		pt.x = x;
-		pt.y = y;
-		return paths.some(p => p.isPointInFill(pt));
+		if (failedHitTests > 50) return true;
+		try {
+			const pt = svgEl.createSVGPoint();
+			pt.x = x;
+			pt.y = y;
+			const isInside = paths.some(p => {
+				if (typeof p.isPointInFill === 'function') return p.isPointInFill(pt);
+				return true;
+			});
+			if (!isInside) failedHitTests++;
+			else failedHitTests = 0;
+			return isInside;
+		} catch(e) { return true; }
 	}
 
 	const placedPoints = [];
@@ -1279,7 +1481,7 @@ function renderMapUsers(cityId, users) {
 
 		const img = document.createElement('img');
 		img.className = 'map-user-avatar';
-
+		
 		// Map performans optimizasyonu: Büyük resimleri (400x400) haritada daha düşük boyutlu (_normal) versiyonuyla render ediyoruz
 		let optimizedAvatar = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
 		if (optimizedAvatar.includes('_400x400')) {
@@ -1314,8 +1516,11 @@ function openDrinkersModal(cityId) {
 	container.innerHTML = '';
 	currentDrinkersPage = 1;
 
-	const cityObj = CITIES.find(c => c.id === cityId);
-	const cityName = cityObj ? cityObj.name : '';
+	let cityObj = CITIES.find(c => c.id === cityId);
+	if (!cityObj && window.currentDynamicCity && window.currentDynamicCity.id === cityId) {
+		cityObj = window.currentDynamicCity.cityData;
+	}
+	const cityName = cityObj ? cityObj.name : (CITY_NAMES_MAP[cityId] || cityId);
 
 	const usersInCity = currentMapUsers[cityId] || [];
 
@@ -1480,12 +1685,12 @@ function closeDrinkersModal() {
 
 	setTimeout(() => {
 		modal.style.display = 'none';
-		// Eger dinamik harita modalindan acildiysa, geri o modala don
-		const dynamicMapModal = document.getElementById('dynamicCityMapModal');
-		if (dynamicMapModal && dynamicMapModal.style.display === 'flex') {
-			// Dinamik harita hala acik, scroll'u kilitle birak
-		} else {
-			unlockScroll();
+		unlockScroll();
+		if (window._reopenDynamicCityId) {
+			const id = window._reopenDynamicCityId;
+			const name = window._reopenDynamicCityName;
+			window._reopenDynamicCityId = null;
+			if (window.openDynamicCityMap) window.openDynamicCityMap(id, name);
 		}
 	}, 350);
 }
@@ -1540,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						wrapper.style.opacity = '1';
 						wrapper.style.marginLeft = '4px';
 					}
-					loadMapData(true);
+					loadMapData();
 				} else {
 					isLiveMode = false;
 					document.querySelectorAll('.map-section').forEach(el => el.classList.remove('live-mode'));
@@ -1549,7 +1754,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						wrapper.style.opacity = '0';
 						wrapper.style.marginLeft = '0';
 					}
-					loadMapData(true);
+					loadMapData();
 				}
 			});
 		});
@@ -1870,66 +2075,237 @@ function renderLivePins(sessions, cityId) {
 	 ŞEHİR GÖRÜNÜMÜ AYARLARI (CITY SETTINGS)
 ============================================================== */
 function applyCityVisibility() {
-	const order = getHomepageCityOrder();
+	let visibleCities = [];
+	try {
+		const stored = localStorage.getItem('visible_cities_v1');
+		if (stored) {
+			visibleCities = JSON.parse(stored);
+		} else {
+			visibleCities = CITIES.map(c => c.id);
+		}
+	} catch (e) {
+		visibleCities = CITIES.map(c => c.id);
+	}
 
-	// Tum city-container'lari gizle, sonra sirasina gore goster
-	const mapSection = document.getElementById('mapSection');
-	if (!mapSection) return;
-
-	const allContainers = mapSection.querySelectorAll('.city-container');
-	allContainers.forEach(c => { c.style.display = 'none'; });
-
-	// Sirasina gore goster ve DOM sirasini guncelle
-	order.forEach(cityId => {
-		const container = document.getElementById(`cityContainer-${cityId}`);
+	CITIES.forEach(city => {
+		const container = document.getElementById(`cityContainer-${city.id}`);
 		if (container) {
-			container.style.display = 'block';
-			mapSection.appendChild(container); // Siralama icin sona tasi
+			if (visibleCities.includes(city.id)) {
+				container.style.display = 'block';
+			} else {
+				container.style.display = 'none';
+			}
 		}
 	});
 }
 
-// Yardimci: Homepage sehir siralamasini oku
-function getHomepageCityOrder() {
-	try {
-		const stored = localStorage.getItem('homepage_cities_v2');
-		if (stored) {
-			const parsed = JSON.parse(stored);
-			if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-		}
-	} catch (e) { }
-
-	// Eski formata fallback
-	try {
-		const oldStored = localStorage.getItem('visible_cities_v1');
-		if (oldStored) {
-			const parsed = JSON.parse(oldStored);
-			if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-		}
-	} catch (e) { }
-
-	return DEFAULT_CITY_IDS.slice();
-}
-
-// Yardimci: Homepage sehir siralamasini kaydet
-function saveHomepageCityOrder(order) {
-	localStorage.setItem('homepage_cities_v2', JSON.stringify(order));
-	// Eski formati da guncelle (geriye uyumluluk)
-	localStorage.setItem('visible_cities_v1', JSON.stringify(order));
-}
-
-const DEFAULT_CITY_IDS = ['istanbul', 'ankara', 'izmir', 'eskisehir'];
-
 document.addEventListener('DOMContentLoaded', () => {
+	// SETTINGS LOGIC WITH REORDER
 	const btnCitySettings = document.getElementById('btnCitySettings');
 	const citySettingsModal = document.getElementById('citySettingsModal');
 	const cityTogglesContainer = document.getElementById('cityTogglesContainer');
 	const closeCitySettingsBtn = document.getElementById('closeCitySettingsBtn');
 	const citySettingsModalOverlay = document.getElementById('citySettingsModalOverlay');
 
+	let draggedItem = null;
+	let placeholder = null;
+
+	const renderCitySettings = () => {
+		let visibleCities = [];
+		try {
+			const stored = localStorage.getItem('visible_cities_v1');
+			if (stored) visibleCities = JSON.parse(stored);
+			else visibleCities = CITIES.map(c => c.id);
+		} catch (e) {
+			visibleCities = CITIES.map(c => c.id);
+		}
+
+		cityTogglesContainer.innerHTML = '';
+		cityTogglesContainer.style.position = 'relative'; // Important for absolute positioning of children
+		
+		CITIES.forEach((city, index) => {
+			const item = document.createElement('div');
+			item.className = 'city-toggle-item';
+			item.dataset.id = city.id;
+			item.style.display = 'flex';
+			item.style.alignItems = 'center';
+			item.style.justifyContent = 'space-between';
+			item.style.padding = '8px 12px';
+			item.style.background = '#f9fafb';
+			item.style.borderRadius = '12px';
+			item.style.userSelect = 'none';
+			item.style.touchAction = 'none'; // Prevent scroll on touch
+			item.style.transition = 'background 0.2s';
+
+			const leftGroup = document.createElement('div');
+			leftGroup.style.display = 'flex';
+			leftGroup.style.alignItems = 'center';
+			leftGroup.style.gap = '12px';
+
+			const input = document.createElement('input');
+			input.type = 'checkbox';
+			input.value = city.id;
+			input.checked = visibleCities.includes(city.id);
+			input.style.width = '18px';
+			input.style.height = '18px';
+			input.style.accentColor = 'var(--accent-color)';
+			input.style.cursor = 'pointer';
+
+			// Event listener for checkbox
+			input.addEventListener('change', () => {
+				const id = input.value;
+				let currentVisible = [];
+				try {
+					const stored = localStorage.getItem('visible_cities_v1');
+					if (stored) currentVisible = JSON.parse(stored);
+					else currentVisible = CITIES.map(c => c.id);
+				} catch (e) { currentVisible = CITIES.map(c => c.id); }
+
+				if (input.checked) {
+					if (!currentVisible.includes(id)) currentVisible.push(id);
+				} else {
+					currentVisible = currentVisible.filter(cId => cId !== id);
+				}
+				localStorage.setItem('visible_cities_v1', JSON.stringify(currentVisible));
+				applyCityVisibility();
+			});
+
+			const span = document.createElement('span');
+			span.innerText = city.name;
+			span.style.fontWeight = '600';
+
+			leftGroup.appendChild(input);
+			leftGroup.appendChild(span);
+
+			const rightGroup = document.createElement('div');
+			rightGroup.style.display = 'flex';
+			rightGroup.style.alignItems = 'center';
+			rightGroup.style.gap = '8px';
+
+			const grip = document.createElement('div');
+			grip.innerHTML = '<svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM20 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM20 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM20 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>';
+			grip.style.cursor = 'grab';
+			grip.style.color = '#9ca3af';
+			grip.style.padding = '4px';
+			grip.style.display = 'flex';
+			grip.style.alignItems = 'center';
+			grip.style.justifyContent = 'center';
+
+			grip.addEventListener('touchstart', handleDragStart, {passive: false});
+			grip.addEventListener('mousedown', handleDragStart);
+
+			rightGroup.appendChild(grip);
+			item.appendChild(leftGroup);
+			item.appendChild(rightGroup);
+			cityTogglesContainer.appendChild(item);
+		});
+	};
+
+	let dragStartY = 0;
+	let draggedItemStartTop = 0;
+
+	function handleDragStart(e) {
+		e.preventDefault();
+		const isTouch = e.type === 'touchstart';
+		draggedItem = e.target.closest('.city-toggle-item');
+		if (!draggedItem) return;
+
+		const rect = draggedItem.getBoundingClientRect();
+		const containerRect = cityTogglesContainer.getBoundingClientRect();
+
+		placeholder = document.createElement('div');
+		placeholder.style.height = rect.height + 'px';
+		placeholder.style.background = '#f3f4f6';
+		placeholder.style.border = '2px dashed #d1d5db';
+		placeholder.style.borderRadius = '12px';
+		
+		draggedItem.parentNode.insertBefore(placeholder, draggedItem);
+		
+		draggedItem.style.position = 'absolute';
+		draggedItem.style.zIndex = '1000';
+		draggedItem.style.width = placeholder.offsetWidth + 'px';
+		draggedItem.style.opacity = '0.9';
+		draggedItem.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+		
+		const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+		dragStartY = clientY;
+		draggedItemStartTop = rect.top - containerRect.top;
+		
+		draggedItem.style.top = draggedItemStartTop + 'px';
+		draggedItem.style.left = '0px';
+
+		if (isTouch) {
+			document.addEventListener('touchmove', handleDragMove, {passive: false});
+			document.addEventListener('touchend', handleDragEnd);
+		} else {
+			document.addEventListener('mousemove', handleDragMove);
+			document.addEventListener('mouseup', handleDragEnd);
+		}
+	}
+
+	function handleDragMove(e) {
+		e.preventDefault();
+		const isTouch = e.type === 'touchmove';
+		const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+		
+		const deltaY = clientY - dragStartY;
+		draggedItem.style.top = (draggedItemStartTop + deltaY) + 'px';
+
+		draggedItem.style.display = 'none';
+		const elemBelow = document.elementFromPoint(cityTogglesContainer.getBoundingClientRect().left + 20, clientY);
+		draggedItem.style.display = 'flex';
+
+		if (!elemBelow) return;
+		const dropTarget = elemBelow.closest('.city-toggle-item');
+		if (dropTarget && dropTarget !== draggedItem && dropTarget !== placeholder) {
+			const rect = dropTarget.getBoundingClientRect();
+			const midY = rect.top + rect.height / 2;
+			if (clientY < midY) {
+				cityTogglesContainer.insertBefore(placeholder, dropTarget);
+			} else {
+				cityTogglesContainer.insertBefore(placeholder, dropTarget.nextSibling);
+			}
+		}
+	}
+
+	function handleDragEnd(e) {
+		document.removeEventListener('touchmove', handleDragMove);
+		document.removeEventListener('touchend', handleDragEnd);
+		document.removeEventListener('mousemove', handleDragMove);
+		document.removeEventListener('mouseup', handleDragEnd);
+
+		if (!draggedItem || !placeholder) return;
+
+		draggedItem.style.position = '';
+		draggedItem.style.zIndex = '';
+		draggedItem.style.width = '';
+		draggedItem.style.top = '';
+		draggedItem.style.left = '';
+		draggedItem.style.opacity = '';
+		draggedItem.style.boxShadow = '';
+
+		placeholder.parentNode.insertBefore(draggedItem, placeholder);
+		placeholder.remove();
+
+		draggedItem = null;
+		placeholder = null;
+
+		const newOrder = Array.from(cityTogglesContainer.querySelectorAll('.city-toggle-item')).map(item => item.dataset.id);
+		CITIES.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+		localStorage.setItem('city_order_v1', JSON.stringify(newOrder));
+
+		const mapSection = document.getElementById('mapSection');
+		if (mapSection) mapSection.innerHTML = '';
+		initMap();
+		CITIES.forEach(c => { renderMapUsers(c.id, currentMapUsers[c.id] || []); });
+	}
+
 	if (btnCitySettings && citySettingsModal && cityTogglesContainer) {
 		btnCitySettings.addEventListener('click', () => {
-			openCitySettingsModal();
+			renderCitySettings();
+			lockScroll();
+			citySettingsModal.style.display = 'flex';
+			setTimeout(() => { citySettingsModal.classList.add('active'); }, 10);
 		});
 	}
 
@@ -1945,827 +2321,223 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (closeCitySettingsBtn) closeCitySettingsBtn.addEventListener('click', closeCitySettings);
 	if (citySettingsModalOverlay) citySettingsModalOverlay.addEventListener('click', closeCitySettings);
-});
 
-function openCitySettingsModal() {
-	const citySettingsModal = document.getElementById('citySettingsModal');
-	const cityTogglesContainer = document.getElementById('cityTogglesContainer');
-	if (!citySettingsModal || !cityTogglesContainer) return;
-
-	const order = getHomepageCityOrder();
-	cityTogglesContainer.innerHTML = '';
-
-	// Aciklama metni
-	const desc = document.createElement('p');
-	desc.style.cssText = 'text-align: center; color: var(--secondary-text); font-size: 14.5px; margin-bottom: 16px;';
-	desc.innerText = 'Sirasini degistirmek icin surukle, gorunurlugu degistirmek icin isarete tikla.';
-	cityTogglesContainer.appendChild(desc);
-
-	const list = document.createElement('div');
-	list.className = 'city-settings-list';
-	list.id = 'citySettingsSortableList';
-
-	order.forEach(cityId => {
-		const cityObj = CITIES.find(c => c.id === cityId);
-		const cityName = cityObj ? cityObj.name : getCityDisplayName(cityId);
-		const isDefault = DEFAULT_CITY_IDS.includes(cityId);
-		const isPinned = !isDefault;
-
-		const item = document.createElement('div');
-		item.className = 'city-settings-item';
-		item.setAttribute('draggable', 'true');
-		item.setAttribute('data-city-id', cityId);
-
-		// Drag handle
-		const handle = document.createElement('div');
-		handle.className = 'drag-handle';
-		handle.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 8h16M4 16h16"/></svg>';
-		item.appendChild(handle);
-
-		// Sehir adi
-		const nameSpan = document.createElement('span');
-		nameSpan.className = 'city-settings-item-name';
-		nameSpan.innerText = cityName;
-		item.appendChild(nameSpan);
-
-		if (isPinned) {
-			const badge = document.createElement('span');
-			badge.className = 'city-settings-item-badge';
-			badge.innerText = 'Eklendi';
-			item.appendChild(badge);
-
-			const removeBtn = document.createElement('button');
-			removeBtn.className = 'btn-city-remove';
-			removeBtn.title = 'Kaldir';
-			removeBtn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
-			removeBtn.addEventListener('click', (e) => {
-				e.stopPropagation();
-				if (confirm(`${cityName} ana sayfadan kaldirilsin mi?`)) {
-					unpinCityFromHomepage(cityId);
-					openCitySettingsModal();
-				}
-			});
-			item.appendChild(removeBtn);
-		} else {
-			const input = document.createElement('input');
-			input.type = 'checkbox';
-			input.checked = true;
-			input.value = cityId;
-			input.style.cssText = 'width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;';
-			input.addEventListener('change', () => {
-				const currentOrder = getHomepageCityOrder();
-				if (!input.checked) {
-					if (currentOrder.length <= 1) {
-						input.checked = true;
-						return;
-					}
-					const newOrder = currentOrder.filter(id => id !== cityId);
-					saveHomepageCityOrder(newOrder);
-				} else {
-					if (!currentOrder.includes(cityId)) {
-						currentOrder.push(cityId);
-						saveHomepageCityOrder(currentOrder);
-					}
-				}
-				applyCityVisibility();
-				openCitySettingsModal();
-			});
-			item.appendChild(input);
-		}
-
-		list.appendChild(item);
-
-		// Drag & Drop
-		item.addEventListener('dragstart', (e) => {
-			item.classList.add('dragging');
-			e.dataTransfer.effectAllowed = 'move';
-			e.dataTransfer.setData('text/plain', cityId);
-		});
-
-		item.addEventListener('dragend', () => {
-			item.classList.remove('dragging');
-			list.querySelectorAll('.city-settings-item').forEach(el => el.classList.remove('drag-over'));
-		});
-
-		item.addEventListener('dragover', (e) => {
-			e.preventDefault();
-			e.dataTransfer.dropEffect = 'move';
-			const dragging = list.querySelector('.dragging');
-			if (dragging && dragging !== item) {
-				item.classList.add('drag-over');
-			}
-		});
-
-		item.addEventListener('dragleave', () => {
-			item.classList.remove('drag-over');
-		});
-
-		item.addEventListener('drop', (e) => {
-			e.preventDefault();
-			item.classList.remove('drag-over');
-			const draggedId = e.dataTransfer.getData('text/plain');
-			if (draggedId === cityId) return;
-
-			const currentOrder = getHomepageCityOrder();
-			const fromIdx = currentOrder.indexOf(draggedId);
-			const toIdx = currentOrder.indexOf(cityId);
-			if (fromIdx === -1 || toIdx === -1) return;
-
-			currentOrder.splice(fromIdx, 1);
-			currentOrder.splice(toIdx, 0, draggedId);
-			saveHomepageCityOrder(currentOrder);
-			applyCityVisibility();
-			openCitySettingsModal();
-		});
-
-		// Touch surukle-birak
-		let touchDragCityId = null;
-		handle.addEventListener('touchstart', (e) => {
-			e.preventDefault();
-			touchDragCityId = cityId;
-			item.classList.add('dragging');
-		}, { passive: false });
-
-		handle.addEventListener('touchmove', (e) => {
-			e.preventDefault();
-			const touch = e.touches[0];
-			list.querySelectorAll('.city-settings-item').forEach(el => el.classList.remove('drag-over'));
-			const target = document.elementFromPoint(touch.clientX, touch.clientY);
-			if (target) {
-				const targetItem = target.closest('.city-settings-item');
-				if (targetItem && targetItem !== item) targetItem.classList.add('drag-over');
-			}
-		}, { passive: false });
-
-		handle.addEventListener('touchend', (e) => {
-			item.classList.remove('dragging');
-			const touch = e.changedTouches[0];
-			const target = document.elementFromPoint(touch.clientX, touch.clientY);
-			if (target) {
-				const targetItem = target.closest('.city-settings-item');
-				if (targetItem && targetItem !== item) {
-					const targetCityId = targetItem.getAttribute('data-city-id');
-					if (targetCityId && touchDragCityId) {
-						const currentOrder = getHomepageCityOrder();
-						const fromIdx = currentOrder.indexOf(touchDragCityId);
-						const toIdx = currentOrder.indexOf(targetCityId);
-						if (fromIdx !== -1 && toIdx !== -1) {
-							currentOrder.splice(fromIdx, 1);
-							currentOrder.splice(toIdx, 0, touchDragCityId);
-							saveHomepageCityOrder(currentOrder);
-							applyCityVisibility();
-							openCitySettingsModal();
-						}
-					}
-				}
-			}
-			list.querySelectorAll('.city-settings-item').forEach(el => el.classList.remove('drag-over'));
-			touchDragCityId = null;
-		});
-	});
-
-	cityTogglesContainer.appendChild(list);
-
-	lockScroll();
-	citySettingsModal.style.display = 'flex';
-	setTimeout(() => { citySettingsModal.classList.add('active'); }, 10);
-}
-
-
-/* ==============================================================
-   TUM SEHIRLER MODULU
-============================================================== */
-
-const svgCache = {};
-let currentDynamicCityId = null;
-let currentDynamicCityName = null;
-
-// Sehir adini SVG dosya ID'sine donustur
-function normalizeCityId(name) {
-	return name
-		.replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
-		.replace(/Ş/g, 's').replace(/ş/g, 's')
-		.replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
-		.replace(/Ü/g, 'u').replace(/ü/g, 'u')
-		.replace(/Ö/g, 'o').replace(/ö/g, 'o')
-		.replace(/Ç/g, 'c').replace(/ç/g, 'c')
-		.toLowerCase();
-}
-
-// ID'den gorsel sehir adi
-function getCityDisplayName(cityId) {
-	const cityObj = CITIES.find(c => c.id === cityId);
-	if (cityObj) return cityObj.name;
-
-	// districtsMap'ten bul
-	for (const name of Object.keys(districtsMap)) {
-		if (normalizeCityId(name) === cityId) return name;
-	}
-	return cityId;
-}
-
-// SVG dosyasini fetch et ve onbellekle
-async function fetchCitySvg(cityId) {
-	if (svgCache[cityId]) return svgCache[cityId];
-	try {
-		const resp = await fetch(`./cities/${cityId}.svg`);
-		if (!resp.ok) return null;
-		const text = await resp.text();
-		svgCache[cityId] = text;
-		return text;
-	} catch (e) {
-		console.error('SVG yuklenemedi:', cityId, e);
-		return null;
-	}
-}
-
-// SVG metnini parse et
-function parseCitySvg(svgText) {
-	const parser = new DOMParser();
-	const doc = parser.parseFromString(svgText, 'image/svg+xml');
-	const svg = doc.querySelector('svg');
-	if (!svg) return null;
-
-	const viewBox = svg.getAttribute('viewBox');
-	const g = svg.querySelector('g');
-	const paths = svg.querySelectorAll('path');
-	let pathsHtml = '';
-	paths.forEach(p => {
-		// Inline stilleri kaldir, CSS ile yonetilecek
-		const clone = p.cloneNode(true);
-		clone.removeAttribute('style');
-		pathsHtml += clone.outerHTML;
-	});
-
-	return { viewBox, pathsHtml };
-}
-
-// CITIES dizisine dinamik sehir ekle (yoksa)
-function ensureCityInArray(cityId, cityName, viewBox, pathsHtml) {
-	if (CITIES.find(c => c.id === cityId)) return;
-
-	const vb = viewBox.split(/[\s,]+/).map(Number);
-	const viewBoxObj = { x: vb[0], y: vb[1], w: vb[2], h: vb[3] };
-	const center = { x: vb[0] + vb[2] / 2, y: vb[1] + vb[3] / 2 };
-	const radius = Math.min(vb[2], vb[3]) / 3;
-
-	CITIES.push({
-		id: cityId,
-		name: cityName,
-		exploreSuffix: "'i Incele",
-		viewBox: viewBox,
-		viewBoxObj: viewBoxObj,
-		path: pathsHtml,
-		center: center,
-		radius: radius,
-		isPinned: true
-	});
-}
-
-
-/* ---- TUM SEHIRLER MODALI ---- */
-
-async function openAllCitiesModal() {
-	const modal = document.getElementById('allCitiesModal');
-	const grid = document.getElementById('allCitiesGrid');
-	const loadingState = document.getElementById('allCitiesLoadingState');
-	if (!modal || !grid) return;
-
-	grid.innerHTML = '';
-	if (loadingState) loadingState.style.display = 'block';
-
-	lockScroll();
-	modal.style.display = 'flex';
-	setTimeout(() => { modal.classList.add('active'); }, 10);
-
-	// Veri cekmeden once oturum kontrolu
-	const { data: { session } } = await supabase.auth.getSession();
-	if (!session) {
-		if (loadingState) loadingState.innerText = 'Giris yapmalisiniz.';
-		return;
-	}
-
-	// Tum profilleri cek ve sehir bazinda say
-	try {
-		const { data, error } = await supabase
-			.from('public_profiles')
-			.select('preferred_locations')
-			.not('preferred_locations', 'is', null)
-			.limit(10000);
-
-		if (error) throw error;
-
-		const cityCounts = {};
-		if (data) {
-			data.forEach(profile => {
-				if (!profile.preferred_locations || !Array.isArray(profile.preferred_locations)) return;
-				const seenCities = new Set();
-				profile.preferred_locations.forEach(loc => {
-					const cityName = loc.split(',')[0].trim();
-					const cityId = normalizeCityId(cityName);
-					if (!seenCities.has(cityId)) {
-						seenCities.add(cityId);
-						if (!cityCounts[cityId]) cityCounts[cityId] = { name: cityName, count: 0 };
-						cityCounts[cityId].count++;
-					}
-				});
-			});
-		}
-
-		if (loadingState) loadingState.style.display = 'none';
-
-		// Alfabetik sirala (Turkce)
-		const sortedCities = Object.entries(cityCounts)
-			.sort((a, b) => a[1].name.localeCompare(b[1].name, 'tr'));
-
-		if (sortedCities.length === 0) {
-			grid.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding: 20px;">Henuz veri bulunamadi.</p>';
-			return;
-		}
-
-		sortedCities.forEach(([cityId, info]) => {
-			const btn = document.createElement('button');
-			btn.className = 'all-cities-btn';
-			btn.innerHTML = `<span class="all-cities-btn-name">${info.name}</span><span class="all-cities-btn-count">${info.count} kullanici</span>`;
-			btn.addEventListener('click', () => {
-				openDynamicCityMap(cityId, info.name);
-			});
-			grid.appendChild(btn);
-		});
-
-	} catch (err) {
-		console.error('Tum sehirler yuklenemedi:', err);
-		if (loadingState) loadingState.innerText = 'Veriler yuklenirken hata olustu.';
-	}
-}
-
-function closeAllCitiesModal() {
-	const modal = document.getElementById('allCitiesModal');
-	if (!modal) return;
-	modal.classList.remove('active');
-	setTimeout(() => {
-		modal.style.display = 'none';
-		unlockScroll();
-	}, 350);
-}
-
-
-/* ---- DINAMIK SEHIR HARITASI ---- */
-
-async function openDynamicCityMap(cityId, cityName) {
-	const modal = document.getElementById('dynamicCityMapModal');
-	const wrapper = document.getElementById('dynamicMapWrapper');
-	const title = document.getElementById('dynamicCityMapTitle');
-	const totalEl = document.getElementById('dynamicCityTotal');
-	const pinBtn = document.getElementById('btnPinToHomepage');
-	if (!modal || !wrapper) return;
-
-	currentDynamicCityId = cityId;
-	currentDynamicCityName = cityName;
-	if (title) title.innerText = cityName;
-	wrapper.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding: 40px 0;">Harita yukleniyor...</p>';
-	if (totalEl) totalEl.innerText = '0';
-
-	// Pin butonu durumunu guncelle
-	const currentOrder = getHomepageCityOrder();
-	if (pinBtn) {
-		if (currentOrder.includes(cityId)) {
-			pinBtn.innerText = 'Zaten Eklendi';
-			pinBtn.disabled = true;
-			pinBtn.style.opacity = '0.5';
-		} else {
-			pinBtn.innerText = 'Ana Sayfaya Ekle';
-			pinBtn.disabled = false;
-			pinBtn.style.opacity = '1';
-		}
-	}
-
-	// Modali goster
-	lockScroll();
-	modal.style.display = 'flex';
-	setTimeout(() => { modal.classList.add('active'); }, 10);
-
-	// SVG yukle
-	const svgText = await fetchCitySvg(cityId);
-	if (!svgText) {
-		wrapper.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding: 40px 0;">Harita bulunamadi.</p>';
-		return;
-	}
-
-	const parsed = parseCitySvg(svgText);
-	if (!parsed) {
-		wrapper.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding: 40px 0;">Harita islenilemedi.</p>';
-		return;
-	}
-
-	// CITIES dizisine ekle
-	ensureCityInArray(cityId, cityName, parsed.viewBox, parsed.pathsHtml);
-
-	// SVG'yi render et
-	const vb = parsed.viewBox.split(/[\s,]+/).map(Number);
-	const aspectRatio = vb[2] / vb[3];
-
-	wrapper.innerHTML = `
-		<svg version="1.1" id="svg-dynamic-${cityId}" xmlns="http://www.w3.org/2000/svg" viewBox="${parsed.viewBox}" style="aspect-ratio: ${aspectRatio};">
-			<g class="istanbul-map-group">
-				${parsed.pathsHtml}
-			</g>
-		</svg>
-		<div class="map-avatars-container" id="mapAvatarsDynamic-${cityId}"></div>
-	`;
-
-	// Kullanici verilerini cek ve pinleri yerlestir
-	try {
-		const { data, error } = await supabase
-			.from('public_profiles')
-			.select('id, display_name, nickname, avatar_url, preferred_locations, updated_at')
-			.order('updated_at', { ascending: false })
-			.limit(10000);
-
-		if (error) throw error;
-
-		const usersInCity = [];
-		if (data) {
-			const normalize = normalizeCityId;
-			data.forEach(profile => {
-				if (!profile.preferred_locations || !Array.isArray(profile.preferred_locations)) return;
-				const groupedLocs = {};
-				let matchesCity = false;
-
-				profile.preferred_locations.forEach(loc => {
-					const parts = loc.split(',');
-					const rawCity = parts[0].trim();
-					const city = normalize(rawCity);
-					if (city === cityId) {
-						matchesCity = true;
-						if (!groupedLocs[city]) groupedLocs[city] = [];
-						if (parts.length >= 2) groupedLocs[city].push(parts[1].trim());
-					}
-				});
-
-				if (matchesCity) {
-					const distString = groupedLocs[cityId] && groupedLocs[cityId].length > 0
-						? groupedLocs[cityId].join(', ') : 'Butun Sehir';
-					usersInCity.push({
-						id: profile.id,
-						display_name: profile.display_name,
-						nickname: profile.nickname,
-						avatar_url: profile.avatar_url,
-						district: distString,
-						updated_at: profile.updated_at
-					});
-				}
-			});
-		}
-
-		// currentMapUsers'a ekle (drinkers modal icin)
-		currentMapUsers[cityId] = usersInCity;
-		if (totalEl) totalEl.innerText = usersInCity.length;
-
-		// Pinleri render et (dinamik harita icin ozel)
-		renderDynamicMapPins(cityId, usersInCity, parsed.viewBox);
-
-	} catch (err) {
-		console.error('Dinamik harita kullanicilari yuklenemedi:', err);
-	}
-}
-
-function renderDynamicMapPins(cityId, users, viewBoxStr) {
-	const mapContainer = document.getElementById(`mapAvatarsDynamic-${cityId}`);
-	const svgEl = document.getElementById(`svg-dynamic-${cityId}`);
-	if (!mapContainer || !svgEl) return;
-	mapContainer.innerHTML = '';
-
-	if (users.length === 0) return;
-
-	const vb = viewBoxStr.split(/[\s,]+/).map(Number);
-	const viewBox = { x: vb[0], y: vb[1], w: vb[2], h: vb[3] };
-
-	const paths = Array.from(svgEl.querySelectorAll('path'));
-	function isInsideLand(x, y) {
-		if (paths.length === 0) return true;
-		const pt = svgEl.createSVGPoint();
-		pt.x = x; pt.y = y;
-		return paths.some(p => p.isPointInFill(pt));
-	}
-
-	const latestUsers = users.slice(0, 100);
-	const stableUsers = [...latestUsers].sort((a, b) => a.id.localeCompare(b.id));
-	const placedPoints = [];
-
-	stableUsers.forEach((user) => {
-		let bestX = viewBox.x + viewBox.w / 2;
-		let bestY = viewBox.y + viewBox.h / 2;
-		let maxClosestDist = -1;
-
-		const userSeed = cyrb128(user.id || '0');
-		const rand = sfc32(userSeed[0], userSeed[1], userSeed[2], userSeed[3]);
-
-		for (let attempts = 0; attempts < 400; attempts++) {
-			const testX = viewBox.x + (rand() * viewBox.w);
-			const testY = viewBox.y + (rand() * viewBox.h);
-
-			if (isInsideLand(testX, testY)) {
-				let closestDist = Infinity;
-				for (const p of placedPoints) {
-					const dx = testX - p.x;
-					const dy = testY - p.y;
-					const dist = Math.sqrt(dx * dx + dy * dy);
-					if (dist < closestDist) closestDist = dist;
-				}
-
-				if (placedPoints.length === 0) {
-					bestX = testX; bestY = testY; break;
-				}
-				if (closestDist > maxClosestDist) {
-					maxClosestDist = closestDist;
-					bestX = testX; bestY = testY;
-				}
-			}
-		}
-
-		placedPoints.push({ x: bestX, y: bestY });
-
-		const leftPercent = ((bestX - viewBox.x) / viewBox.w) * 100;
-		const topPercent = ((bestY - viewBox.y) / viewBox.h) * 100;
-
-		const pin = document.createElement('div');
-		pin.className = 'map-user-pin';
-		pin.style.left = `${leftPercent}%`;
-		pin.style.top = `${topPercent}%`;
-		pin.setAttribute('data-name', formatName(user.display_name));
-
-		pin.addEventListener('click', () => { openProfileModal({ id: user.id }); });
-
-		const img = document.createElement('img');
-		img.className = 'map-user-avatar';
-		let optimizedAvatar = user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-		if (optimizedAvatar.includes('_400x400')) optimizedAvatar = optimizedAvatar.replace('_400x400', '_normal');
-
-		const animDelay = rand() * 0.8;
-		pin.style.animationDelay = `${animDelay}s`;
-		img.src = optimizedAvatar;
-		img.alt = formatName(user.display_name);
-		img.onerror = () => { img.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'; };
-
-		pin.appendChild(img);
-		mapContainer.appendChild(pin);
-	});
-}
-
-function closeDynamicCityMap() {
-	const modal = document.getElementById('dynamicCityMapModal');
-	if (!modal) return;
-	modal.classList.remove('active');
-	setTimeout(() => {
-		modal.style.display = 'none';
-		// Tum Sehirler modali hala aciksa scroll'u kilitle birak
-		const allCitiesModal = document.getElementById('allCitiesModal');
-		if (allCitiesModal && allCitiesModal.style.display === 'flex') {
-			// Scroll kilidi devam etsin
-		} else {
-			unlockScroll();
-		}
-	}, 350);
-	currentDynamicCityId = null;
-	currentDynamicCityName = null;
-}
-
-
-/* ---- ANA SAYFAYA SEHIR EKLEME (PINLEME) ---- */
-
-function pinCityToHomepage(cityId, cityName) {
-	const order = getHomepageCityOrder();
-	if (order.includes(cityId)) return; // Zaten eklenmis
-
-	order.push(cityId);
-	saveHomepageCityOrder(order);
-
-	// Tum modallari kapat
-	const dynamicModal = document.getElementById('dynamicCityMapModal');
-	const allCitiesModal = document.getElementById('allCitiesModal');
-
-	if (dynamicModal) {
-		dynamicModal.classList.remove('active');
-		setTimeout(() => { dynamicModal.style.display = 'none'; }, 300);
-	}
-	if (allCitiesModal) {
-		allCitiesModal.classList.remove('active');
-		setTimeout(() => { allCitiesModal.style.display = 'none'; }, 300);
-	}
-
-	// Pinned sehri ana sayfaya ekle ve renderla
-	setTimeout(async () => {
-		await renderSinglePinnedCity(cityId, cityName);
-		applyCityVisibility();
-		loadMapData(true);
-
-		// Ayarlar modalini ac
-		setTimeout(() => { openCitySettingsModal(); }, 500);
-	}, 400);
-}
-
-function unpinCityFromHomepage(cityId) {
-	const order = getHomepageCityOrder();
-	const newOrder = order.filter(id => id !== cityId);
-
-	// En az 1 sehir kalmali
-	if (newOrder.length === 0) return;
-
-	saveHomepageCityOrder(newOrder);
-
-	// Container'i kaldir
-	const container = document.getElementById(`cityContainer-${cityId}`);
-	if (container) container.remove();
-
-	// CITIES dizisinden kaldir (sadece pinned olanlari)
-	const idx = CITIES.findIndex(c => c.id === cityId && c.isPinned);
-	if (idx !== -1) CITIES.splice(idx, 1);
-
-	// currentMapUsers'tan temizle
-	delete currentMapUsers[cityId];
-
-	applyCityVisibility();
-}
-
-
-/* ---- PINNED SEHIRLER ANA SAYFA RENDER ---- */
-
-async function initPinnedCities() {
-	const order = getHomepageCityOrder();
-	const mapSection = document.getElementById('mapSection');
-	if (!mapSection) return;
-
-	let hasNewPinned = false;
-	for (const cityId of order) {
-		if (DEFAULT_CITY_IDS.includes(cityId)) continue;
-		// Zaten container varsa atla
-		if (document.getElementById(`cityContainer-${cityId}`)) continue;
-
-		const cityName = getCityDisplayName(cityId);
-		await renderSinglePinnedCity(cityId, cityName);
-		hasNewPinned = true;
-	}
-
-	applyCityVisibility();
-
-	// Container'lar olustuktan sonra kullanici verilerini yukle
-	if (hasNewPinned) {
-		await loadPinnedCityData();
-	}
-}
-
-async function renderSinglePinnedCity(cityId, cityName) {
-	const mapSection = document.getElementById('mapSection');
-	if (!mapSection) return;
-	if (document.getElementById(`cityContainer-${cityId}`)) return;
-
-	const svgText = await fetchCitySvg(cityId);
-	if (!svgText) return;
-
-	const parsed = parseCitySvg(svgText);
-	if (!parsed) return;
-
-	ensureCityInArray(cityId, cityName, parsed.viewBox, parsed.pathsHtml);
-
-	const vb = parsed.viewBox.split(/[\s,]+/).map(Number);
-	const aspectRatio = vb[2] / vb[3];
-
-	const container = document.createElement('div');
-	container.className = 'city-container pinned-city';
-	container.id = `cityContainer-${cityId}`;
-	container.innerHTML = `
-		<div class="city-badge">${cityName}</div>
-		<div class="map-wrapper" id="mapWrapper-${cityId}" style="aspect-ratio: ${aspectRatio};">
-			<svg version="1.1" id="svg-${cityId}" xmlns="http://www.w3.org/2000/svg" viewBox="${parsed.viewBox}" style="width:100%;height:100%;display:block;">
-				<g id="${cityId}-paths" class="istanbul-map-group">
-					${parsed.pathsHtml}
-				</g>
-			</svg>
-			<div class="map-avatars-container" id="mapAvatarsContainer-${cityId}"></div>
-		</div>
-		<div class="city-footer">
-			<div class="city-stats" id="cityStats-${cityId}">
-				Toplam <strong id="cityTotal-${cityId}">0</strong> kullanici
-			</div>
-			<div class="city-controls">
-				<div style="display: flex; gap: 8px; align-items: center; margin: 0 auto;">
-					<button class="btn-map-action" id="btnExplore-${cityId}"></button>
-				</div>
-			</div>
-		</div>
-	`;
-
-	mapSection.appendChild(container);
-
-	// "Incele" butonunu bagla
-	const btnExplore = document.getElementById(`btnExplore-${cityId}`);
-	if (btnExplore) {
-		btnExplore.innerText = `${cityName}'i Incele`;
-		btnExplore.addEventListener('click', () => openDrinkersModal(cityId));
-	}
-
-	// currentMapUsers baslatma
-	if (!currentMapUsers[cityId]) currentMapUsers[cityId] = [];
-}
-
-async function loadPinnedCityData() {
-	const order = getHomepageCityOrder();
-	const pinnedIds = order.filter(id => !DEFAULT_CITY_IDS.includes(id));
-	if (pinnedIds.length === 0) return;
-
-	try {
-		const { data, error } = await supabase
-			.from('public_profiles')
-			.select('id, display_name, nickname, avatar_url, preferred_locations, updated_at')
-			.order('updated_at', { ascending: false })
-			.limit(10000);
-
-		if (error) throw error;
-		if (!data) return;
-
-		// Pinned sehirler icin kullanicilari ayristir
-		pinnedIds.forEach(cityId => {
-			currentMapUsers[cityId] = [];
-		});
-
-		data.forEach(profile => {
-			if (!profile.preferred_locations || !Array.isArray(profile.preferred_locations)) return;
-			const groupedLocs = {};
-
-			profile.preferred_locations.forEach(loc => {
-				const parts = loc.split(',');
-				const rawCity = parts[0].trim();
-				const city = normalizeCityId(rawCity);
-				if (pinnedIds.includes(city)) {
-					if (!groupedLocs[city]) groupedLocs[city] = [];
-					if (parts.length >= 2) groupedLocs[city].push(parts[1].trim());
-				}
-			});
-
-			Object.keys(groupedLocs).forEach(city => {
-				const distString = groupedLocs[city].length > 0 ? groupedLocs[city].join(', ') : 'Butun Sehir';
-				if (!currentMapUsers[city]) currentMapUsers[city] = [];
-				currentMapUsers[city].push({
-					id: profile.id,
-					display_name: profile.display_name,
-					nickname: profile.nickname,
-					avatar_url: profile.avatar_url,
-					district: distString,
-					updated_at: profile.updated_at
-				});
-			});
-		});
-
-		// Pinleri render et
-		pinnedIds.forEach(cityId => {
-			renderMapUsers(cityId, currentMapUsers[cityId]);
-		});
-
-	} catch (err) {
-		console.error('Pinned sehir verileri yuklenemedi:', err);
-	}
-}
-
-
-/* ---- EVENT LISTENER'LAR ---- */
-
-document.addEventListener('DOMContentLoaded', () => {
-	// Tum Sehirler butonu
+	// ALL CITIES LOGIC
 	const btnAllCities = document.getElementById('btnAllCities');
-	if (btnAllCities) {
-		btnAllCities.addEventListener('click', () => { openAllCitiesModal(); });
-	}
-
-	// Tum Sehirler modali kapat
+	const allCitiesModal = document.getElementById('allCitiesModal');
 	const closeAllCitiesBtn = document.getElementById('closeAllCitiesBtn');
 	const allCitiesModalOverlay = document.getElementById('allCitiesModalOverlay');
-	if (closeAllCitiesBtn) closeAllCitiesBtn.addEventListener('click', closeAllCitiesModal);
-	if (allCitiesModalOverlay) allCitiesModalOverlay.addEventListener('click', closeAllCitiesModal);
+	const allCitiesContainer = document.getElementById('allCitiesContainer');
 
-	// Dinamik Harita modali kapat
-	const closeDynamicBtn = document.getElementById('closeDynamicCityMapBtn');
-	const dynamicOverlay = document.getElementById('dynamicCityMapOverlay');
-	if (closeDynamicBtn) closeDynamicBtn.addEventListener('click', closeDynamicCityMap);
-	if (dynamicOverlay) dynamicOverlay.addEventListener('click', closeDynamicCityMap);
+	if (btnAllCities && allCitiesModal) {
+		btnAllCities.addEventListener('click', () => {
+			allCitiesContainer.innerHTML = '';
+			
+			const activeCities = Object.keys(currentMapUsers).filter(c => currentMapUsers[c] && currentMapUsers[c].length > 0);
+			
+			activeCities.sort((a, b) => {
+				const nameA = CITY_NAMES_MAP[a] || a;
+				const nameB = CITY_NAMES_MAP[b] || b;
+				return nameA.localeCompare(nameB, 'tr');
+			});
 
-	// Dinamik Harita "Incele" butonu
-	const btnDynamicExplore = document.getElementById('btnDynamicExplore');
-	if (btnDynamicExplore) {
-		btnDynamicExplore.addEventListener('click', () => {
-			if (currentDynamicCityId) {
-				openDrinkersModal(currentDynamicCityId);
+			if (activeCities.length === 0) {
+				allCitiesContainer.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--secondary-text);">Henüz hiçbir şehirde kayıtlı kullanıcı yok.</p>';
+			} else {
+				allCitiesContainer.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-size: 13px; color: var(--secondary-text); margin-bottom: 5px;">Şehirler alfabetik olarak sıralanmıştır.</p>';
+				activeCities.forEach(cityId => {
+					const cityName = CITY_NAMES_MAP[cityId] || cityId;
+					const userCount = currentMapUsers[cityId].length;
+					
+					const btn = document.createElement('button');
+					btn.className = 'btn-secondary';
+					btn.style.backgroundColor = '#ffffff';
+					btn.style.color = '#1c1917';
+					btn.style.border = '1px solid #e5e7eb';
+					btn.style.padding = '10px 8px';
+					btn.style.fontSize = '13.5px';
+					btn.style.display = 'flex';
+					btn.style.justifyContent = 'space-between';
+					btn.style.alignItems = 'center';
+					btn.style.cursor = 'pointer';
+					btn.style.gap = '4px';
+					
+					btn.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;">${cityName}</span> <span style="background: var(--accent-color); color: white; border-radius: 12px; padding: 2px 6px; font-size: 11.5px; flex-shrink: 0;">${userCount}</span>`;
+					
+					btn.addEventListener('click', () => {
+						closeAllCities();
+						window._reopenAllCities = true;
+						setTimeout(() => openDynamicCityMap(cityId, cityName), 350);
+					});
+					
+					allCitiesContainer.appendChild(btn);
+				});
 			}
+			
+			lockScroll();
+			allCitiesModal.style.display = 'flex';
+			setTimeout(() => { allCitiesModal.classList.add('active'); }, 10);
 		});
+		
+		const closeAllCities = () => {
+			allCitiesModal.classList.remove('active');
+			setTimeout(() => {
+				allCitiesModal.style.display = 'none';
+				unlockScroll();
+			}, 350);
+		};
+		
+		if (closeAllCitiesBtn) closeAllCitiesBtn.addEventListener('click', closeAllCities);
+		if (allCitiesModalOverlay) allCitiesModalOverlay.addEventListener('click', closeAllCities);
 	}
 
-	// "Ana Sayfaya Ekle" butonu
-	const btnPinToHomepage = document.getElementById('btnPinToHomepage');
-	if (btnPinToHomepage) {
-		btnPinToHomepage.addEventListener('click', () => {
-			if (currentDynamicCityId && currentDynamicCityName) {
-				pinCityToHomepage(currentDynamicCityId, currentDynamicCityName);
+	// DYNAMIC CITY MAP LOGIC
+	let currentDynamicCity = null;
+
+	window.openDynamicCityMap = async function(cityId, cityName) {
+		const modal = document.getElementById('dynamicCityMapModal');
+		const title = document.getElementById('dynamicCityMapTitle');
+		const wrapper = document.getElementById('dynamicMapWrapper');
+		const total = document.getElementById('dynamicCityTotal');
+		const btnExplore = document.getElementById('btnExploreDynamicCity');
+		const btnPin = document.getElementById('btnPinToHome');
+		const pinText = document.getElementById('pinToHomeText');
+		
+		title.innerText = cityName;
+		total.innerText = currentMapUsers[cityId] ? currentMapUsers[cityId].length : 0;
+		wrapper.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--secondary-text);">Harita yükleniyor...</div>';
+		
+		const isPinned = CITIES.some(c => c.id === cityId);
+		if (isPinned) {
+			pinText.innerText = "Ana Sayfadan Kaldır";
+			btnPin.style.backgroundColor = "#ef4444";
+		} else {
+			pinText.innerText = "Ana Sayfaya Ekle";
+			btnPin.style.backgroundColor = "var(--accent-color)";
+		}
+		
+		currentDynamicCity = { id: cityId, name: cityName };
+		
+		lockScroll();
+		modal.style.display = 'flex';
+		setTimeout(() => { modal.classList.add('active'); }, 10);
+		
+		try {
+			let cityData = CITIES.find(c => c.id === cityId);
+			
+			if (!cityData) {
+				const res = await fetch(`/cities/${cityId}.svg`);
+				if (!res.ok) throw new Error('SVG bulunamadı');
+				const svgText = await res.text();
+				
+				const parser = new DOMParser();
+				const doc = parser.parseFromString(svgText, "image/svg+xml");
+				const svgEl = doc.querySelector('svg');
+				const viewBox = svgEl.getAttribute('viewBox');
+				const gEl = doc.querySelector('g');
+				
+				const [vx, vy, vw, vh] = viewBox.split(/[\s,]+/).map(parseFloat);
+				
+				cityData = {
+					id: cityId,
+					name: cityName,
+					exploreSuffix: "'i İncele",
+					viewBox: viewBox,
+					viewBoxObj: { x: vx, y: vy, w: vw, h: vh },
+					path: gEl.innerHTML.replace(/fill="[^"]*"/g, '').replace(/style="[^"]*"/g, ''),
+					center: { x: vx + vw/2, y: vy + vh/2 },
+					radius: Math.min(vw, vh)/2
+				};
 			}
-		});
-	}
+			
+			currentDynamicCity.cityData = cityData;
+			
+			wrapper.innerHTML = `
+				<svg version="1.1" id="svg-dynamic" style="width: 100%; max-height: 250px;" xmlns="http://www.w3.org/2000/svg" viewBox="${cityData.viewBox}">
+					<g id="dynamic-paths" class="istanbul-map-group" style="fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1px;">
+						${cityData.path}
+					</g>
+				</svg>
+				<div class="map-avatars-container" id="mapAvatarsContainer-dynamic"></div>
+			`;
+			
+			setTimeout(() => {
+				renderMapUsers('dynamic', currentMapUsers[cityId] || []);
+			}, 50);
+			
+		} catch (e) {
+			wrapper.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--secondary-text);">Harita yüklenemedi. SVG dosyası eksik.</div>';
+			console.error(e);
+		}
+		
+		btnExplore.onclick = () => { 
+			window._reopenAllCities = false;
+			closeDynamicMap();
+			window._reopenDynamicCityId = cityId;
+			window._reopenDynamicCityName = cityName;
+			setTimeout(() => { openDrinkersModal(cityId); }, 350);
+		};
+		
+		btnPin.onclick = () => {
+			if (!currentDynamicCity || !currentDynamicCity.cityData) return;
+			
+			const customStr = localStorage.getItem('custom_cities_v1');
+			let customCities = customStr ? JSON.parse(customStr) : [];
+			
+			if (CITIES.some(c => c.id === cityId)) {
+				customCities = customCities.filter(c => c.id !== cityId);
+				CITIES = CITIES.filter(c => c.id !== cityId);
+				pinText.innerText = "Ana Sayfaya Ekle";
+				btnPin.style.backgroundColor = "var(--accent-color)";
+			} else {
+				customCities.push(currentDynamicCity.cityData);
+				CITIES.push(currentDynamicCity.cityData);
+				pinText.innerText = "Ana Sayfadan Kaldır";
+				btnPin.style.backgroundColor = "#ef4444";
+				
+				localStorage.setItem('custom_cities_v1', JSON.stringify(customCities));
+				
+				const mapSection = document.getElementById('mapSection');
+				if (mapSection) mapSection.innerHTML = ''; 
+				initMap();
+				CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id] || []); });
+				
+				window._reopenAllCities = false;
+				closeDynamicMap();
+				setTimeout(() => {
+					const btnCitySettings = document.getElementById('btnCitySettings');
+					if(btnCitySettings) btnCitySettings.click();
+				}, 350);
+				return;
+			}
+			
+			localStorage.setItem('custom_cities_v1', JSON.stringify(customCities));
+			
+			const mapSection = document.getElementById('mapSection');
+			if (mapSection) mapSection.innerHTML = ''; 
+			
+			initMap();
+			CITIES.forEach(city => { renderMapUsers(city.id, currentMapUsers[city.id] || []); });
+		};
+	};
+
+	const closeDynamicCityMapBtn = document.getElementById('closeDynamicCityMapBtn');
+	const dynamicCityMapModalOverlay = document.getElementById('dynamicCityMapModalOverlay');
+	const modalDynamic = document.getElementById('dynamicCityMapModal');
+	
+	const closeDynamicMap = () => {
+		modalDynamic.classList.remove('active');
+		setTimeout(() => {
+			modalDynamic.style.display = 'none';
+			if (window._reopenAllCities) {
+				window._reopenAllCities = false;
+				const btnAllCities = document.getElementById('btnAllCities');
+				if (btnAllCities) btnAllCities.click();
+			} else {
+				unlockScroll();
+			}
+		}, 350);
+	};
+	if (closeDynamicCityMapBtn) closeDynamicCityMapBtn.addEventListener('click', closeDynamicMap);
+	if (dynamicCityMapModalOverlay) dynamicCityMapModalOverlay.addEventListener('click', closeDynamicMap);
 });

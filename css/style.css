@@ -1193,10 +1193,12 @@ header {
 		opacity: 0;
 		transform: scale(0);
 	}
+
 	60% {
 		opacity: 1;
 		transform: scale(1.15);
 	}
+
 	100% {
 		opacity: 1;
 		transform: scale(1);
@@ -1682,8 +1684,10 @@ input:checked+.slider:before {
 
 .landing-content {
 	max-width: 600px;
-	margin: auto; /* This centers it perfectly vertically and horizontally in a flex container */
-	padding-bottom: 40px; /* Slight visual adjustment if needed */
+	margin: auto;
+	/* This centers it perfectly vertically and horizontally in a flex container */
+	padding-bottom: 40px;
+	/* Slight visual adjustment if needed */
 }
 
 .landing-title {
@@ -1733,4 +1737,242 @@ input:checked+.slider:before {
 	color: var(--secondary-text);
 	opacity: 0.7;
 	text-align: center;
+}
+
+/* ==============================================================
+   TUM SEHIRLER MODULU STILLERI
+============================================================== */
+
+/* Modal Z-Index Hiyerarsisi */
+#allCitiesModal {
+	z-index: 3000;
+}
+
+#dynamicCityMapModal {
+	z-index: 5000;
+}
+
+#drinkersModal {
+	z-index: 99999;
+}
+
+#profileModal,
+#liveSessionModal {
+	z-index: 999999;
+}
+
+/* Tum Sehirler Grid */
+.all-cities-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+}
+
+@media (max-width: 600px) {
+	.all-cities-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+	}
+}
+
+.all-cities-btn {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	background-color: #ffffff;
+	border: 1px solid #f0f0ef;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+	text-align: left;
+}
+
+.all-cities-btn:hover {
+	background-color: #fafaf9;
+	border-color: #e7e5e4;
+}
+
+.all-cities-btn:active {
+	transform: scale(0.98);
+}
+
+.all-cities-btn-name {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--text-color);
+	line-height: 1.2;
+}
+
+.all-cities-btn-count {
+	font-size: 11.5px;
+	font-weight: 500;
+	color: #a8a29e;
+	flex-shrink: 0;
+}
+
+/* Dinamik Harita Modali */
+.dynamic-map-wrapper {
+	position: relative;
+	width: 100%;
+	max-height: 40vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	margin: 0 auto;
+}
+
+.dynamic-map-wrapper svg {
+	width: 100%;
+	height: auto;
+	max-height: 40vh;
+	display: block;
+}
+
+.dynamic-map-wrapper .istanbul-map-group path {
+	fill: #f1f5f9;
+	stroke: #cbd5e1;
+	stroke-width: 0.75px;
+	transition: fill 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dynamic-map-wrapper .istanbul-map-group path:hover {
+	fill: #e2e8f0;
+}
+
+.dynamic-map-wrapper .map-avatars-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.dynamic-map-footer {
+	text-align: center;
+	padding: 8px 0 0 0;
+}
+
+/* Ana Sayfaya Eklenen (Pinned) Sehirler */
+.city-container.pinned-city .map-wrapper {
+	max-height: 280px;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.city-container.pinned-city .map-wrapper svg {
+	max-height: 280px;
+	width: auto;
+	max-width: 100%;
+}
+
+/* Ayarlar Modali - Drag & Drop */
+.city-settings-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.city-settings-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	background: #fafaf9;
+	border: 1px solid var(--border-color);
+	border-radius: 12px;
+	transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+	user-select: none;
+}
+
+.city-settings-item.dragging {
+	opacity: 0.5;
+	background: #f0f0ef;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+	transform: scale(1.02);
+}
+
+.city-settings-item.drag-over {
+	border-color: var(--accent-color);
+	background: rgba(245, 158, 11, 0.04);
+}
+
+.drag-handle {
+	cursor: grab;
+	color: #a8a29e;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	touch-action: none;
+}
+
+.drag-handle:active {
+	cursor: grabbing;
+}
+
+.drag-handle svg {
+	pointer-events: none;
+}
+
+.city-settings-item-name {
+	flex: 1;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-color);
+}
+
+.city-settings-item-badge {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--secondary-text);
+	background: #f0f0ef;
+	padding: 2px 8px;
+	border-radius: 6px;
+	flex-shrink: 0;
+}
+
+.btn-city-remove {
+	background: none;
+	border: none;
+	color: #a8a29e;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.15s ease, background-color 0.15s ease;
+	flex-shrink: 0;
+}
+
+.btn-city-remove:hover {
+	color: #ef4444;
+	background-color: #fef2f2;
+}
+
+/* Mobil: Kontrol Cubugunun Tek Satirda Kalmasi */
+@media (max-width: 420px) {
+	.global-map-controls .toggle-label {
+		font-size: 12px !important;
+	}
+
+	.global-map-controls .switch {
+		width: 38px;
+		height: 20px;
+	}
+
+	.global-map-controls .slider:before {
+		height: 14px;
+		width: 14px;
+	}
+
+	.global-map-controls input:checked+.slider:before {
+		transform: translateX(18px);
+	}
 }
